@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PUYO PUYO arena/multiplayer</title>
+    <style>
+      /* latin-ext */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELaw9pWt_-.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELawFpWg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      body,html{
+        background: #000;
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        font-family: Courier Prime;
+      }
+      #c{
+        background:#000;
+        display: block;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #c:focus{
+        outline: none;
+      }
+      .modal{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(45deg, #000, #008);
+        z-index: 1000;
+        display: block;
+        color: #fff;
+        font-size: 24px;
+      }
+      #title{
+        font-size:2.2em;
+        line-height: 1em;
+        display: inline-block;
+        vertical-align: top;
+        margin-top: 20px;
+      }
+      .logo{
+        width: 125px;
+        height: 125px;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-image: url(logo.png);
+        background-position: center center;
+        display: inline-block;
+      }
+      #createGameContainer{
+        width: 500px;
+        background: #023;
+        height: 500px;
+        padding: 20px;
+        position: relative;
+        border: 10px solid #4f82;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .textInput:focus{
+        outline: none;
+      }
+      .textInput{
+        border: none;
+        background: #000;
+        border-bottom: 4px solid #4f88;
+        font-family: Courier Prime;
+        font-size: 24px;
+        width: 100%;
+        color: #fff;
+      }
+      hr{
+       border-top: none;
+       border-color: #4f82;
+       border-bottom-width: 10px;
+      }
+      .replay{
+        z-index: 100;
+        display: none;
+        border: none;
+        background: #284c;
+        font-family: Courier Prime;
+        color: #fff;
+        text-shadow: 1px 1px 1px #000;
+        position: absolute;
+        left: 50%;
+        font-size: 24px;
+        top: 50%;
+        cursor: pointer;
+        border-radius: 10px;
+        padding: 5px;
+        min-width: 200px;
+        transform: translate(-50%, -50%);
+      }
+      .button{
+        padding: 10px;
+        min-width: 300px;
+        font-size: 24px;
+        font-family: Courier Prime;
+        color: #fff;
+        text-shadow: 3px 3px 3px #000;
+        border: none;
+        border-radius: 10px;
+        background: #40f8;
+        position: absolute;
+        left: 50%;
+        bottom: 50px;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" tabindex=0></canvas>
+    <button onclick="restart()" class="replay">play again</button>
+    <div class="modal">
+      <div id="createGameContainer">
+      <div class="logo"></div>
+      <div id="title">
+        PUYO PUYO<br>
+        <span style="font-size: .61em">MULTIPLAYER/ONLINE</span>
+      </div>
+      <hr><br>
+      <label for="nameInput">
+        enter your name<br><br>
+        <input
+         class="textInput"
+         type="text"
+         placeholder="name"
+         id="nameInput"
+         autofocus
+         onkeydown="test(event)"
+        >
+      </label>
+      <button class="button" onclick="validate()" id="connectButton">connect</button>
+    </div>
+    <script>
+      connectButton = document.querySelector('#connectButton')
+      nameInput = document.querySelector('#nameInput')
+      
+      test = e => {
+        if(e.keyCode == 13) validate()
+      }
+      
+      connect = () => {
+        userName = nameInput.value
+        if(userName.length && userName.split('').filter(v=>v.charCodeAt(0)!=32).join('').length){
+          userName = userName.split('').filter((v,i)=>i<10).join('')
+          let sendData = {
+            userName
+          }
+          fetch('createGame.php',{
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sendData),
+          }).then(res=>res.json()).then(data=>{
+            console.log(data)
+            if(data[0]){
+              location.href = `g/?g=${data[1]}&gmid=${data[3]}&p=${data[3]}`
+            }else{
+              console.log('error! crap')
+            }
+          })
+        }
+      }
+      
+      validate = () => {
+        if(nameInput.value) connect()
+      }
+      
+    </script>
+  </body>
+</html>

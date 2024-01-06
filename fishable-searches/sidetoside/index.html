@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SIDE TO SIDE / MULTIPLAYER / ARENA</title>
+    <style>
+      /* latin-ext */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELaw9pWt_-.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Courier Prime';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELawFpWg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      body,html{
+        background: #000;
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        font-family: Courier Prime;
+      }
+      #c{
+        background:#000;
+        display: block;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #c:focus{
+        outline: none;
+      }
+      .modal{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(45deg, #000, #008);
+        z-index: 1000;
+        display: block;
+        color: #fff;
+        font-size: 24px;
+      }
+      #title{
+        font-size:2.2em;
+        line-height: 1em;
+        display: inline-block;
+        vertical-align: top;
+        margin-top: 20px;
+      }
+      .logo{
+        width: 125px;
+        height: 125px;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-image: url(logo.png);
+        background-position: center center;
+        display: inline-block;
+      }
+      #createGameContainer{
+        width: 500px;
+        background: #023;
+        height: 500px;
+        padding: 20px;
+        position: relative;
+        border: 10px solid #4f82;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .textInput:focus{
+        outline: none;
+      }
+      .textInput{
+        border: none;
+        background: #000;
+        border-bottom: 4px solid #4f88;
+        font-family: Courier Prime;
+        font-size: 24px;
+        width: 100%;
+        color: #fff;
+      }
+      hr{
+       border-top: none;
+       border-color: #4f82;
+       border-bottom-width: 10px;
+      }
+      .replay{
+        z-index: 100;
+        display: none;
+        border: none;
+        background: #284c;
+        font-family: Courier Prime;
+        color: #fff;
+        text-shadow: 1px 1px 1px #000;
+        position: absolute;
+        left: 50%;
+        font-size: 24px;
+        top: 50%;
+        cursor: pointer;
+        border-radius: 10px;
+        padding: 5px;
+        min-width: 200px;
+        transform: translate(-50%, -50%);
+      }
+      .button{
+        padding: 10px;
+        min-width: 300px;
+        font-size: 24px;
+        font-family: Courier Prime;
+        color: #fff;
+        text-shadow: 3px 3px 3px #000;
+        border: none;
+        border-radius: 10px;
+        background: #40f8;
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" tabindex=0></canvas>
+    <button onclick="restart()" class="replay">play again</button>
+    <div class="modal">
+      <div id="createGameContainer">
+      <div class="logo"></div>
+      <div id="title">
+        SIDE TO SIDE<br>
+        <span style="font-size: .61em">MULTIPLAYER/ONLINE</span>
+      </div>
+      <hr><br>
+      <label for="nameInput">
+        enter your name<br><br>
+        <input
+         class="textInput"
+         type="text"
+         placeholder="name"
+         id="nameInput"
+         autofocus
+         onkeydown="test(event)"
+        >
+      </label>
+      <button class="button" onclick="validate()" id="connectButton">connect</button>
+    </div>
+    <script>
+      connectButton = document.querySelector('#connectButton')
+      nameInput = document.querySelector('#nameInput')
+      
+      test = e => {
+        if(e.keyCode == 13) validate()
+      }
+      
+      connect = () => {
+        userName = nameInput.value
+        if(userName.length && userName.split('').filter(v=>v.charCodeAt(0)!=32).join('').length){
+          userName = userName.split('').filter((v,i)=>i<10).join('')
+          let sendData = {
+            userName
+          }
+          fetch('createGame.php',{
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sendData),
+          }).then(res=>res.json()).then(data=>{
+            console.log(data)
+            if(data[0]){
+              location.href = `g/?g=${data[1]}&gmid=${data[3]}&p=${data[3]}`
+            }else{
+              console.log('error! crap')
+            }
+          })
+        }
+      }
+      
+      validate = () => {
+        if(nameInput.value) connect()
+      }
+      
+      begin = () => {
+        c=document.querySelector('#c')
+        x=c.getContext('2d')
+        S=Math.sin
+        C=Math.cos
+        t=playing=0
+        rsz=window.onresize=()=>{
+          setTimeout(()=>{
+            if(document.body.clientWidth > document.body.clientHeight*1.77777778){
+              c.style.height = '100vh'
+              setTimeout(()=>c.style.width = c.clientHeight*1.77777778+'px',0)
+            }else{
+              c.style.width = '100vw'
+              setTimeout(()=>c.style.height = c.clientWidth/1.77777778 + 'px',0)
+            }
+            c.width=1920
+            c.height=c.width/1.777777778
+          },0)
+        }
+        rsz()
+        Draw=()=>{
+          if(!t){
+            Rn=Math.random
+            bgimg=new Image()
+            bgimg.src='./network.jpg'
+            catface = new Image()
+            catface.src = './cat-face.gif'
+            mx=my=moves=0
+            winnerLine = []
+            inplay=true
+            sqid=-1
+            window.onclick=e=>{
+              if(inplay && B[sqid]==-1) play()
+            }
+            window.ontouchend=e=>{
+              setTimeout(()=>{
+                if(inplay && B[sqid]==-1) play()
+              },500)
+            }
+            window.ontouchstart=e=>{
+              r=c.getBoundingClientRect()
+              mx=(e.pageX-r.left)/c.clientWidth*c.width
+              my=(e.pageY-r.top)/c.clientHeight*c.height
+            }
+            window.ontouchmove=e=>{
+              r=c.getBoundingClientRect()
+              mx=(e.pageX-r.left)/c.clientWidth*c.width
+              my=(e.pageY-r.top)/c.clientHeight*c.height
+            }
+            window.onmousemove=e=>{
+              r=c.getBoundingClientRect()
+              mx=(e.pageX-r.left)/c.clientWidth*c.width
+              my=(e.pageY-r.top)/c.clientHeight*c.height
+            }
+            turn=false
+            B=Array(9).fill(-1)
+
+            idx=(X,Y)=>{
+              return Y*3+X
+            }
+
+            idx2=val=>{
+              return [val%3, val/3|0]
+            }
+
+            fill=(idx, col)=>{
+              l=idx2(idx)
+              X=(l[0]-1.5)*s*2
+              Y=(l[1]-1.5)*s*2
+              x1=c.width/2+X
+              y1=c.height/2+Y
+              x.fillStyle=col
+              x.fillRect(x1,y1,s*2,s*2)
+            }
+
+            restart=()=>{
+              document.querySelectorAll('.replay')[0].style.display='none'
+              setTimeout(()=>{
+                turn=false
+                B=Array(9).fill(-1)
+                inplay=true
+                winnerLine = []
+                sqid=-1
+                moves=0
+              },500)
+            }
+
+            doEnding=()=>{
+              inplay=false
+              let el = document.querySelectorAll('.replay')[0]
+              el.style.display='block'
+              el.innerHTML = winnerLine.length>1?'play again':'"cat\'s game!"<br><div style="display: inline-block;width:100px;height:50px;background-size: 100px 50px;background-image: url(./cat-face.gif)"></div><br>play again'
+            }
+
+            victor=(O,n,q)=>{
+              a=[]
+              for(let m=3;m--;){
+                switch(q){
+                 case 0: //ROW
+                   a=[...a, [n, m]]
+                 break
+                 case 1: //COLUMN
+                   a=[...a, [m, n]]
+                 break
+                 case 2: //DIAGONAL
+                   l=[[0,4,8],[2,4,6]]
+                   a=[...a, [...idx2(l[n][m])]]
+                 break
+                }
+              }
+              winnerLine=a
+            }
+
+            check=()=>{
+              let inplay=true
+              for(O=2;O--;){
+                tgval=O?true: false
+                for(n=3;n--;){
+                  for(ct=0, m=3; m--;) ct+=B[id=idx(n, m)]==tgval?1:0
+                  if(inplay && ct==3) inplay=false, victor(O,n,0)
+                  for(ct=0, m=3; m--;) ct+=B[id=idx(m, n)]===tgval?1:0
+                  if(inplay && ct==3) inplay=false, victor(O,n,1)
+                }
+                l=[[0,4,8],[2,4,6]]
+                for(m=3;m--;)for(n=2;n--;){
+                  if(inplay && B[l[n][m]]===tgval&&B[l[n][(m+1)%3]]===tgval&&B[l[n][(m+2)%3]]==tgval) inplay=false,victor(O,n,2)
+                }
+              }
+              return inplay
+            }
+
+            play=()=>{
+              moved=false
+              B[sqid]=turn
+              if(!moves){
+                if(sqid==1||sqid==3||sqid==5||sqid==7){
+                  l=[4]
+                  for(i=4;i--;){
+                    if(!moved){
+                      id = l[(i)%l.length]
+                      if(B[id]==-1){B[id]=true,moves++;return}
+                    }
+                  }
+                }
+                if(sqid==0||sqid==2||sqid==6||sqid==8){
+                  if(B[4]==-1){B[4]=true,moves++;return}
+                  l=[1,3,5,7]
+                  for(i=4;i--;){
+                    if(!moved){
+                      id = l[(i)%l.length]
+                      if(B[id]==-1){B[id]=true,moves++;return}
+                    }
+                  }
+                }
+                if(B[4]===false){
+                  l=[0,2,6,8]
+                  for(i=4;i--;){
+                    if(!moved){
+                      id = l[(i)%l.length]
+                      if(B[id]==-1){B[id]=true,moves++;moved=true;return}
+                    }
+                  }
+                }
+              }
+              moves++
+              for(O=2;O--;){
+                if(!moved){
+                  tgval=O?true: false
+                  for(n=3;n--;){
+                    for(ct=cs=0, m=3; m--;){
+                      if(B[id=idx(m, n)]==-1) bk=id, cs++
+                      ct+=B[id]===tgval?1:0
+                    }
+                    if(!moved && cs && ct==2) B[bk]=true, moved=true
+                    for(ct=cs=0, m=3; m--;){
+                      if(B[id=idx(n, m)]==-1) bk=id, cs++
+                      ct+=B[id]===tgval?1:0
+                    }
+                    if(!moved && cs && ct==2) B[bk]=true, moved=true
+                  }
+                  l=[[0,4,8],[2,4,6]]
+                  for(m=3;m--;)for(n=2;n--;){
+                    if(!moved&&B[l[n][m]]===tgval&&B[l[n][(m+1)%3]]===tgval&&B[l[n][(m+2)%3]]==-1)B[l[n][(m+2)%3]]=true,moved=true
+                  }
+                }
+              }
+
+              inplay=false
+              B.map((v,i)=>{
+                if(v==-1){
+                  inplay=true
+                }
+              })
+              if(!check() || !inplay){
+                doEnding()
+              } else if(!moved) {
+                a=[]
+                B.map((v,i)=>{
+                  if(v==-1) a=[...a, i]
+                })
+                if(moves==2){
+                  if(sqid==0||sqid==2||sqid==6||sqid==8){
+                    if(B[4]==-1){B[4]=true,moves++;return}
+                    l=B[4]==false?[0,2,6,8]:[1,3,5,7]
+                    for(i=4;i--;){
+                      if(!moved){
+                        id = l[(i)%l.length]
+                        if(B[id]==-1){B[id]=true,moves++;return}
+                      }
+                    }
+                  }
+                }
+                if(B[4]==-1){B[4]=true,moves++;return}      
+                B[a[Math.random()*a.length|0]]=true
+              }
+            }
+
+            drawBoard=()=>{
+              x.globalAlpha=.2
+              x.drawImage(bgimg,0,0,c.width,c.height)
+              x.fillStyle='#0004'
+              x.fillRect(0,0,c.width,c.height)
+              x.lineJoin=x.lineCap='round'
+              x.beginPath()
+              x.lineTo(c.width/2-s,c.height/2-s2)
+              x.lineTo(c.width/2-s,c.height/2+s2)
+              x.lineWidth=50
+              x.strokeStyle='#fff3'
+              x.stroke()
+              x.lineWidth/=3
+              x.strokeStyle='#fff'
+              x.stroke()
+              x.beginPath()
+              x.lineTo(c.width/2+s,c.height/2-s2)
+              x.lineTo(c.width/2+s,c.height/2+s2)
+              x.lineWidth=50
+              x.strokeStyle='#fff3'
+              x.stroke()
+              x.lineWidth/=3
+              x.strokeStyle='#fff'
+              x.stroke()
+              x.beginPath()
+              x.lineTo(c.width/2-s2,c.height/2-s)
+              x.lineTo(c.width/2+s2,c.height/2-s)
+              x.lineWidth=50
+              x.strokeStyle='#fff3'
+              x.stroke()
+              x.lineWidth/=3
+              x.strokeStyle='#fff'
+              x.stroke()
+              x.beginPath()
+              x.lineTo(c.width/2-s2,c.height/2+s)
+              x.lineTo(c.width/2+s2,c.height/2+s)
+              x.lineWidth=50
+              x.strokeStyle='#fff3'
+              x.stroke()
+              x.lineWidth/=3
+              x.strokeStyle='#fff'
+              x.stroke()
+              x.globalAlpha=1
+            }
+
+            xpic=new Image()
+            xpicloaded=false
+            xpic.onload=()=>{xpicloaded=true}
+            xpic.src = './o.png'
+            opic=new Image()
+            opicloaded=false
+            opic.onload=()=>{opicloaded=true}
+            opic.src = './x.png'
+          }
+
+          if(xpicloaded && opicloaded){
+
+            s=c.width>c.height?c.width/12:c.height/12
+            s2=s*3
+            drawBoard()
+         
+            x.fillStyle='#4f8'
+            x.fillRect(mx-s/8,my-s/8,s/4,s/4)
+
+            B.map((v,i)=>{
+              if(v!=-1){
+                l=idx2(i)
+                X=(l[0]-1.5)*s*2
+                Y=(l[1]-1.5)*s*2
+                x1=c.width/2+X
+                y1=c.height/2+Y
+                x.drawImage(v?xpic:opic,x1,y1,s*2,s*2)
+              }
+            })
+
+            if(inplay){
+              sqid=-1
+              for(i=9;i--;){
+                l=idx2(i)
+                X=(l[0]-1.5)*s*2
+                Y=(l[1]-1.5)*s*2
+                x1=c.width/2+X
+                y1=c.height/2+Y
+                x2=x1+s*2
+                y2=y1+s*2
+                if(mx>x1&&mx<x2&&my>y1&&my<y2){
+                  sqid=i
+                  fill(i, B[i]==-1?'#4f82':'#f442')
+                }
+              }
+            }
+            if(winnerLine.length){
+              x.beginPath()
+              winnerLine.map(v=>{
+                X=c.width/2+(v[0]-1)*s*2
+                Y=c.height/2+(v[1]-1)*s*2
+                x.lineTo(X,Y)
+              })
+              x.strokeStyle='#f00'
+              x.lineWidth=40
+              x.stroke()
+              x.lineWidth/=3
+              x.strokeStyle='#faa'
+              x.stroke()
+            }
+          }
+
+          t+=1/60
+          requestAnimationFrame(Draw)
+        }
+        Draw()
+      }
+      
+    </script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+<DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body, html{
+        margin: 0;
+        background: #000;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      iframe{
+        border: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe src="https://fishable-searches.000webhostapp.com/a/prettycode" id="mainFrame"></iframe>
+    <script>
+      if(location.href.indexOf('?')!=-1){
+        pathname = location.href.split('?')[1]
+        el = document.querySelector('#mainFrame')
+        el.src = 'https://fishable-searches.000webhostapp.com/a/prettycode/?' + pathname
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=.5">
+    <title>ARENA GAMES LAUNCHPAD - multi/single player online games, always free.</title>
+    <style>
+      /* latin-ext */
+      @font-face {
+        font-family: 'Kode Mono';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/kodemono/v1/A2BYn5pb0QgtVEPFnlYOk4Lwa5I.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Kode Mono';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/kodemono/v1/A2BYn5pb0QgtVEPFnlYOnYLw.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      body, html{
+        font-family: 'Kode Mono';
+        font-size: 16px;
+        color: #8fc;
+        min-height: 100vh;
+        background-color: #000;
+        background-position: center center;
+        background-size: cover;
+        background-image: url(bg.jpg);
+        text-align: center;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
+      ::-webkit-scrollbar {
+        width: 12px!important;
+      }
+      ::-webkit-scrollbar:hover{
+      }
+      ::-webkit-scrollbar-track {
+        background: #132;
+      }
+      ::-webkit-scrollbar-track:hover {
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #084;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #0f4; 
+        cursor: pointer!important;
+      }
+      #gameSessions{
+        box-shadow: 0 0 50px #0f2;
+        width: calc(90vw + 32px);
+        height: 200px;
+        background: #020a;
+        display: inline-block;
+        margin-top: 25px;
+        border-radius: 25px;
+        overflow-y: auto;
+        overflow-x: auto;
+        font-size: .75em;
+      }
+      #mainContainer{
+        box-shadow: 0 0 50px #40f;
+        min-width: 200px;
+        width: 20vw;
+        height: calc(85vh - 225px);
+        display: inline-block;
+        border-radius: 50px 0 0 50px;
+        margin-top: 5px;
+        background: #103a;
+        overflow: hidden;
+        padding-bottom: 33px;
+      }
+      #gameDiv{
+        box-shadow: 0 0 50px #0ff;
+        width: 70vw;
+        height: calc(85vh - 225px);
+        display: inline-block;
+        border-radius: 0 50px 50px 0;
+        margin-top: 5px;
+        margin-left: 28px;
+        background: #011a;
+        overflow: hidden;
+        padding-bottom: 33px;
+      }
+      #main{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        max-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+      .header{
+        text-align: center;
+      }
+      #gameTitle, .header{
+        height: 32px;
+        display: block;
+        text-align: center;
+        font-size: 26px;
+        line-height: 29px;
+        color: #ff0;
+        text-shadow: 2px 2px 3px #f06;
+      }
+      .gameIcon{
+        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-color: #0008;
+        float: left;
+        margin: 5px;
+      }
+      #pageTitle{
+        font-size: 50px;
+        color: #ff0;
+        text-shadow: 0 0 15px #f06;
+        transform: scale(2.75,.75);
+        position: fixed;
+        margin-top: -5px;
+        width: 100%;
+      }
+      .gameTile{
+        width: 150px;
+        margin: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        background: #208;
+        box-shadow: 0 0 20px #f04;
+      }
+      #practiceFrame{
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+      }
+      #arena{
+        min-width: 800px;
+        width: calc(100vw - 0px);
+        height: calc(100vh - 50px);
+        position: fixed;
+        top: calc(50% + 25px);
+        left: calc(50%);
+        transform: translate(-50%, -50%);
+      }
+      .gameThumb{
+        width: 140px;
+        height: 140px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        background-color: #0000;
+        overflow-clip-margin: unset;
+        margin-top: 5px;
+        display: inline-block;
+      }
+      .practiceButton{
+        background: #286;
+        color: #afc;
+        margin-bottom: 2.5px;
+        margin-top: 5px;
+      }
+      .shortButton{
+        min-height: unset!important;
+        height: 24px;
+        margin-left: 20px;
+        margin-right: 20px;
+      }
+      .arenaButton{
+        background: #826;
+        color: #fac;
+        margin-top: 2.5px;
+        margin-bottom: 5px;
+      }
+      .gameFullButton{
+        background: #544;
+        color: #dad;
+        margin-top: 2.5px;
+        margin-bottom: 5px;
+      }
+      .arenaButton:focus, .practiceButton:focus, .gameFullButton:focus{
+        outline: none;
+      }
+      .arenaButton, .practiceButton, .gameFullButton{
+        text-shadow: 2px 2px 2px #000;
+        border-radius: 5px;
+        border: none;
+        font-size: 16px;
+        min-width: 140px;
+        cursor: pointer;
+        min-height: 35px;
+      }
+      .tileTitle{
+        background: #104;
+        color: #fff;
+      }
+      .onlineServer{
+        color: #0f2!important;
+      }
+      .offlineServer{
+        color: #f02!important;
+      }
+      .onlineServer, .offlineServer{
+        vertical-align: middle;
+        display: inline-block;
+        text-shadow: initial;
+        font-size: 1.1em;
+        margin-left: 5px;
+        cursor: pointer;
+      }
+      .liveGameDiv{
+        width: 400px;
+        min-height: 135px;
+        border-radius: 15px;
+        display: inline-block;
+        margin: 8px;
+        padding: 5px;
+        background: #0008;
+        font-size: 1.5em;
+      }
+      .clear{
+        clear: both;
+      }
+      #noGamesPlaceholder{
+        width: 300px;
+        height: 165px;
+        border: none;
+        background: #0000;
+        display: inline-block;
+      }
+      .liveGameTitle{
+        color: #ff0;
+        text-shadow: 2px 2px 3px #f06;
+        font-size: 1.5em
+        line-height: .8em;
+        background: #000;
+      }
+      .detailsTable{
+        border-collape: collapse;
+        display: inline-block;
+      }
+      .leftTD{
+        color: #ff0;
+        text-shadow: 2px 2px 3px #f06;
+        text-align: right;
+        padding-right: 5px;
+      }
+      .rightTD{
+        color: #0f8;
+        text-shadow: 1px 1px 2px #fff;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="pageTitle">ARENA GAMES</div>
+    <div id="pageTitle">ARENA GAMES</div>
+    <div id="pageTitle">ARENA GAMES</div>
+    <div id="pageTitle">ARENA GAMES</div>
+    <div id="pageTitle">ARENA GAMES</div>
+    <div id="arena">
+      <div id="mainContainer">
+        <div class="header" style="background: #40f3;">games </div>
+        <div id="main"></div>
+      </div>
+      <div id="gameDiv" style="background: #0ff3;">
+        <div id="gameTitle"></div>
+        <iframe id="practiceFrame" src=""></iframe>
+      </div>
+      <div id="gameSessions">
+        <div class="header" style="background: #0f03;" id="liveGamesHeader"></div>
+        <div id="gameSessionsInner"></div>
+      </div>
+    </div>
+    <script>
+      let practiceFrame = document.querySelector('#practiceFrame')
+      let gameTitle = document.querySelector('#gameTitle')
+      let liveGamesHeader = document.querySelector('#liveGamesHeader')
+      let gameSessionsInner = document.querySelector('#gameSessionsInner')
+      openPractice = game =>{
+        practiceFrame.src = game.practiceDir
+        gameTitle.innerHTML = `${game.name} <span style="color:#888;">[practice]</span>&nbsp;&nbsp;&nbsp;`
+        let arenaButton = document.createElement('button')
+        arenaButton.className = 'arenaButton shortButton'
+        arenaButton.title = `Open a new ${game.name} arena, with shareable link`
+        arenaButton.innerHTML = 'LAUNCH ARENA'
+        arenaButton.onclick=()=>{
+          gameTitle.innerHTML = `${game.name} <span style="color:#888;">[LIVE!]</span>`
+          practiceFrame.src = game.gameDir
+        }
+        gameTitle.appendChild(arenaButton)
+      }
+      
+      placeholderAnimationInvoked = false
+      getLiveGames = () => {
+        fetch('/mirrors/rawGames.php').then(res=>res.json()).then(data=>{
+          let liveGames = data.liveGames
+          let servers = data.servers
+          liveGamesHeader.innerHTML = '   LIVE GAMES <span style="font-size:.75em;">[status '
+          servers.map(server=>{
+            let serverIcon = document.createElement('span')
+            serverIcon.className = !!(+server.active) ? 'onlineServer' : 'offlineServer'
+            serverIcon.title = server.topURL + ' [' + server.actualURL + ']'
+            serverIcon.innerHTML = '◉'
+            liveGamesHeader.appendChild(serverIcon)
+          })
+          liveGamesHeader.innerHTML += ']</span>'
+          if(liveGames.length){
+            placeholderAnimationInvoked = false
+            gameSessionsInner.innerHTML = ''
+            liveGames.map(liveGame=>{
+              let el = document.createElement('div')
+              el.className = 'liveGameDiv'
+              let liveGameTitle = document.createElement('div')
+              liveGameTitle.className = 'liveGameTitle'
+              liveGameTitle.innerHTML = liveGame.game
+              el.appendChild(liveGameTitle)
+              let gameIcon = document.createElement('div')
+              gameIcon.className = 'gameIcon'
+              gameIcon.style.backgroundImage = `url(${liveGame.icon})`
+              el.appendChild(gameIcon)
+              
+              let liveGameDetails = document.createElement('table')
+              liveGameDetails.className = 'detailsTable'
+
+              let row = document.createElement('tr')
+              leftTD = document.createElement('td')
+              leftTD.className = 'leftTD'
+              leftTD.innerHTML = 'OP'
+              row.appendChild(leftTD)
+              rightTD = document.createElement('td')
+              rightTD.className = 'rightTD'
+              rightTD.innerHTML = liveGame.OP
+              row.appendChild(rightTD)
+              liveGameDetails.appendChild(row)
+              
+              row = document.createElement('tr')
+              leftTD = document.createElement('td')
+              leftTD.className = 'leftTD'
+              leftTD.innerHTML = 'GAME FULL'
+              row.appendChild(leftTD)
+              rightTD = document.createElement('td')
+              rightTD.className = 'rightTD'
+              rightTD.innerHTML = liveGame.gameFull ? 'yes' : 'no'
+              row.appendChild(rightTD)
+              liveGameDetails.appendChild(row)
+              
+              row = document.createElement('tr')
+              leftTD = document.createElement('td')
+              leftTD.className = 'leftTD'
+              leftTD.innerHTML = '# USERS'
+              row.appendChild(leftTD)
+              rightTD = document.createElement('td')
+              rightTD.className = 'rightTD'
+              rightTD.innerHTML = liveGame.users
+              row.appendChild(rightTD)
+              liveGameDetails.appendChild(row)
+              
+              el.appendChild(liveGameDetails)
+              
+              
+              el.innerHTML += '<br>'
+              let arenaButton = document.createElement('button')
+              arenaButton.className = `${liveGame.gameFull ? 'gameFullButton' : 'arenaButton'} shortButton`
+              arenaButton.title = `Join this${liveGame.game} arena in progress`
+              arenaButton.innerHTML = liveGame.gameFull ? 'GAME FULL!' : 'JOIN GAME'
+              if(!liveGame.gameFull) arenaButton.onclick=()=>{
+                //gameTitle.innerHTML = `${liveGame.game} <span style="color:#888;">[LIVE!]</span>`
+                //practiceFrame.src = liveGame.gameLink
+
+                let a = document.createElement('a')
+                a.target = '_blank'
+                a.href = liveGame.gameLink
+                a.style.position = 'absolute'
+                a.style.display = 'none'
+                document.body.appendChild(a)
+                a.click()
+                a.remove()
+              }
+              el.appendChild(arenaButton)
+              let clearDiv = document.createElement('div');
+              clearDiv.className = 'clear'
+              el.appendChild(clearDiv)
+              gameSessionsInner.appendChild(el)
+            })
+          }else{
+            if(!placeholderAnimationInvoked){
+              placeholderAnimationInvoked = true
+              gameSessionsInner.innerHTML = ''
+              let el = document.createElement('iframe')
+              el.id = 'noGamesPlaceholder'
+              el.src = 'waiting.html'
+              gameSessionsInner.appendChild(el)
+            }
+          }
+        })
+      }
+      
+      getLiveGames()
+    
+      games = []
+      loadGames = () => {
+        main = document.querySelector('#main')
+        fetch('getGames.php').then(res=>res.json()).then(data=>{
+          data.map(game => {
+            games = [...games, game]
+            let el = document.createElement('div')
+            el.className = 'gameTile'
+            let tileTitle = document.createElement('div')
+            tileTitle.className = 'tileTitle'
+            tileTitle.innerHTML = game.name + "<br>"
+            el.appendChild(tileTitle)
+            let thumb = document.createElement('div')
+            thumb.className = 'gameThumb'
+            thumb.style.backgroundImage = `url(${game.thumb})`
+            el.appendChild(thumb)
+            let practiceButton = document.createElement('button')
+            practiceButton.className = 'practiceButton'
+            practiceButton.innerHTML = 'PRACTICE'
+            practiceButton.title = `Open ${game.name} to practice before battling other humans online...`
+            practiceButton.onclick=()=>{
+              openPractice(game)
+            }
+            el.appendChild(practiceButton)
+            let arenaButton = document.createElement('button')
+            arenaButton.className = 'arenaButton'
+            arenaButton.title = `Open a new ${game.name} arena, with shareable link`
+            arenaButton.innerHTML = 'LAUNCH ARENA'
+            arenaButton.onclick=()=>{
+              gameTitle.innerHTML = `${game.name} <span style="color:#888;">[LIVE!]</span>`
+              practiceFrame.src = game.gameDir
+            }
+            el.appendChild(arenaButton)
+            main.appendChild(el)
+          })
+          openPractice(games[0])
+        })
+        
+        if(1)setInterval(()=>{
+          getLiveGames()
+        }, 4000)
+      }
+      loadGames()
+      
+    </script>
+  </body>
+</html>

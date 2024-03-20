@@ -1,0 +1,6 @@
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name fishable-searches.000webhostapp.com;
+    return 301 $scheme://fishable-searches.000webhostapp.com/index.php?i=$request_uri;
+}

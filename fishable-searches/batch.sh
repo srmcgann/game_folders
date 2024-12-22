@@ -21,7 +21,7 @@ mv *.zip ..
 mv *.zip ..
 ./setDomainBatch.sh "whr.42web.io" "if0_35680091" "if0_35680091_arena" "kjiGQM2DqnhUAuU" "sql312.infinityfree.com"
 mv *.zip ..
-./setDomainBatch.sh "whr.000.pe" "if0_35680402" "if0_35680402_arena" "nBbQv0M3POyp" "sql200.infinityfree.com"
+./setDomainBatch.sh "whr.66ghz.com" "if0_35680402" "if0_35680402_arena" "nBbQv0M3POyp" "sql200.infinityfree.com"
 mv *.zip ..
 ./setDomainBatch.sh "orb.42web.io" "if0_35680488" "if0_35680488_arena" "9K12EE4mmF3yi" "sql213.infinityfree.com"
 mv *.zip ..

@@ -140,16 +140,7 @@
     </div>
     <script>
 
-
-      /*  to do
-      //  
-      //  ✔ animate/interpolate nextPieces
-      //  ✔ implement swap piece
-      //  ✔ pause/unpause
-      //
-      //
-      */
-
+      /*
       c = document.querySelector('#c')
       c.width = 1920
       c.height = 1080
@@ -1894,32 +1885,6 @@
                 tmy: 0,
               }
             ]
-          
-            /*sliders = [...sliders,
-              {
-                caption: 'AI speed',
-                style: 'horizontal',   // vertical/horizontal
-                posX: c.width/2 + 450,
-                posY: c.height-85,
-                width: 400,
-                height: 70,
-                min: 0,
-                max: 100,
-                majorStep: 25,
-                minorStep: 2.5,
-                tickColor: '#0f8a',
-                backgroundColor: '#40f1',
-                selectorColor: '#fff',
-                valVariable: 'AISpeed',
-                padding: 75,
-                textColor: '#0ff',
-                fontSize: 24,
-                captionVar: AISpeed + '%',
-                sliding: false,
-                tmx: 0,
-                tmy: 0,
-              }
-            ]*/
           }
           
           loadSliders()
@@ -3073,27 +3038,6 @@
         menuWidth = 150
         menux = -menuWidth
         bct = 0  // must appear before 1st button (for callbacks/ clickability)
-
-        /*X = c.width - 129
-        Y = c.height - 140
-        renderButton('instadrop AI[✔]', X, Y, 'cancel instadrop  ', 'toggleInstadrop()', 'rectangle', '#f008', '#4018', 24)
-
-        X = c.width - 129
-        Y = c.height - 140
-        renderButton('instadrop AI[ ]', X, Y, 'enable instadrop (CPU INTENSIVE!)  ', 'toggleInstadrop()', 'rectangle', '#0ff4', '#2088', 24)
-
-        X = c.width - 100
-        Y = c.height - 100
-        renderButton('[tab] pause', X, Y, '[tab] pause/unpause game  ', 'togglePause()', 'rectangle', '#0ff4', '#2088', 24)
-
-        X = c.width - 115
-        Y = c.height - 100
-        renderButton('[tab] unpause', X, Y, '[tab] pause/unpause game  ', 'togglePause()', 'rectangle', '#f008', '#4018', 24)
-
-        X = c.width - 107
-        Y = c.height - 60
-        renderButton('(re)set AI #', X, Y, 'configure how many AI Players  ', 'masterInit(true)', 'rectangle', '#0ff4', '#2088', 24)
-        */
         
         X = c.width/2-65
         Y = 76
@@ -3145,8 +3089,10 @@
         t+=1/60
         requestAnimationFrame(Draw)
       }
+      */
+      
 
-      alphaToDec = val => {
+      const alphaToDec = val => {
         let pow=0
         let res=0
         let cur, mul
@@ -3160,12 +3106,12 @@
         return res
       }
 
-      regFrame = document.querySelector('#regFrame')
-      launchModal = document.querySelector('#launchModal')
-      launchStatus = document.querySelector('#launchStatus')
-      gameLink = document.querySelector('#gameLink')
+      var regFrame = document.querySelector('#regFrame')
+      var launchModal = document.querySelector('#launchModal')
+      var launchStatus = document.querySelector('#launchStatus')
+      var gameLink = document.querySelector('#gameLink')
 
-      launch = () => {
+      const launch = () => {
         let none = false
         if(0){//&&(none = typeof users == 'undefined') || users.length<2){
           alert("this game requires at least one other player to join!\n\nCurrent users joined: " + (none ? 0 : users.length))
@@ -3176,16 +3122,16 @@
         Draw()
       }
 
-      doJoined = jid => {
+      const doJoined = jid => {
         regFrame.style.display = 'none'
         regFrame.src = ''
         userID = +jid
         sync()
       }
 
-      fullSync = false
-      individualPlayerData = {}
-      syncPlayerData = users => {
+      var fullSync = false
+      var individualPlayerData = {}
+      const syncPlayerData = users => {
         
         users.map((user, idx) => {
           if((typeof Players != 'undefined') &&
@@ -3336,13 +3282,14 @@
         }
       }
 
-      recData              = []
-      users                = []
-      userID               = ''
-      gameConnected        = false
-      Players              = []
-      playerName           = ''
-      sync = () => {
+      var recData              = []
+      var users                = []
+      var userID               = ''
+      var gameConnected        = false
+      var Players              = []
+      var playerName           = ''
+      var gameID
+      const sync = () => {
         let sendData = {
           gameID,
           userID,
@@ -3418,7 +3365,7 @@
         })
       }
 
-      fullCopy = () => {
+      const fullCopy = () => {
         launchButton = document.createElement('button')
         launchButton.innerHTML = 'launch!'
         launchButton.className = 'buttons'
@@ -3444,7 +3391,7 @@
         },0)
       }
 
-      copy = () => {
+      const copy = () => {
         var range = document.createRange()
         range.selectNode(document.querySelectorAll('.resultLink')[0])
         window.getSelection().removeAllRanges()
@@ -3470,9 +3417,12 @@
         setTimeout(()=>{reduceOpacity()}, 250)
       }
       
-      userID = launched = pchoice = false
+      var userID = false
+      var launched = false
+      var pchoice = false
+      var gmid
       if(location.href.indexOf('gmid=') !== -1){
-        href = location.href
+        var href = location.href
         if(href.indexOf('?g=') !== -1) gameSlug = href.split('?g=')[1].split('&')[0]
         if(href.indexOf('&g=') !== -1) gameSlug = href.split('&g=')[1].split('&')[0]
         if(href.indexOf('?gmid=') !== -1) gmid = href.split('?gmid=')[1].split('&')[0]

@@ -40,6 +40,10 @@
         $serverList = $servers;
         $tgturl = $serverList[rand()%sizeof($serverList)]['actualURL'].$gamesel;
       break;
+      case 'hextris':
+        $serverList = $servers;
+        $tgturl = $serverList[rand()%sizeof($serverList)]['actualURL'].$gamesel;
+      break;
       case 'orbs':
         $serverList = $servers;
         $tgturl = $serverList[rand()%sizeof($serverList)]['actualURL'].$gamesel;

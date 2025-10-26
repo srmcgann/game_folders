@@ -258,6 +258,9 @@
       #trektrisThumb{
         background-image: url(trektrisThumb.jpg);
       }
+      #hextrisThumb{
+        background-image: url(hextrisThumb.jpg);
+      }
       #orbsThumb{
         background-image: url(orbsThumb.jpg);
       }
@@ -487,6 +490,20 @@
             liveLink: '/launch/?gamesel=trektris'
           },
           {
+            practiceFrameTgt: 'hextris_practice',
+            content: {
+              thumbId: 'hextrisThumb',
+            },
+            captionsPractice:[
+              'HEXTRIS',
+              '<span style="font-size: 1.5em;">PRACTICE</span>',
+              '',
+            ],
+            captionsLive:[
+              '<span style="font-size: 1.5em"> ARENA </span>'
+            ],
+            liveLink: '/launch/?gamesel=hextris'
+          },          {
             practiceFrameTgt: 'orbs_practice',
             content: {
               thumbId: 'orbsThumb',

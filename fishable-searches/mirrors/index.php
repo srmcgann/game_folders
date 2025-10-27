@@ -68,6 +68,7 @@
       $gameTables = [
         'tic tac toe'  => 'tictactoeGames',
         'trektris'     => 'trektrisGames',
+        'hextris'      => 'hextrisGames',
         'orbs'         => 'platformGames',
         'side to side' => 'sideToSideGames',
         'puyopuyo'     => 'puyopuyoGames',
@@ -161,6 +162,38 @@
                   }
                   if($numberPlayers >= 4) $gameFull = true;
                   $gameLink = $server['actualURL'] . "trektris?i=/game/$slug/";
+                break;
+                case 'hextris':
+                  $icon = 'hextrisThumb.jpg';
+                  $data = $row;
+                  if($data['data']){
+                    $gameID = $data['id'];
+                    $slug = decToAlpha($gameID);
+                    $sql = "SELECT name, id FROM hextrisSessions WHERE gameID = $gameID";
+                    $res2 = mysqli_query($game_link, $sql);
+                    if(mysqli_num_rows($res2)){
+                      $row2 = mysqli_fetch_assoc($res2);
+                      $gameMaster = $row2['name'];
+                      $gmid = $row2['id'];
+                    }else{
+                      $gameMaster = '[absent]';
+                    }
+                    $tData = json_decode($data['data']);
+                    $players = $tData->{'players'};
+                    $numberPlayers = 0;
+                    $lastUpdate = 0;
+                    forEach($players as $player){
+                      forEach($player as $key2=>$val2){
+                        if($key2 == 'time'){
+                          $numberPlayers++;
+                          $lu = $val2;
+                          if($lu > $lastUpdate) $lastUpdate = $lu;
+                        }
+                      }
+                    }
+                  }
+                  if($numberPlayers >= 2) $gameFull = true;
+                  $gameLink = $server['actualURL'] . "hextris/g/?g=$slug&gmid=$gmid";
                 break;
                 case 'orbs':
                   $icon = 'burst.png';

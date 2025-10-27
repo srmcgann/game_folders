@@ -388,7 +388,7 @@
           gameID,
           userName,
           gmid,
-          userID: parent.userID ? parent.userID : ''
+          userID: top.userID ? top.userID : ''
         }
         fetch('joinGame.php',{
           method: 'POST',
@@ -401,11 +401,11 @@
             console.log(data)
             if(data[1] != 'fail'){
               console.log(data[2]) //msg
-              href = parent.window.location.href
+              href = top.window.location.href
               if(href.indexOf('?p=') == -1 && href.indexOf('&p=') == -1){
-                parent.history.pushState({},null, href + "&p=" + data[4])
+                top.history.pushState({},null, href + "&p=" + data[4])
               }
-              parent.doJoined(data[4])
+              top.doJoined(data[4])
             }else{
               console.log('error! game ID not found!')
             }
@@ -439,8 +439,8 @@
         console.log('[reg] game slug: ' + gameSlug)
         gameID = alphaToDec(gameSlug)
         console.log('[reg]       (id: ' + gameID + ')')
-        if(parent.href.indexOf('?p=') !== -1) userID = parent.href.split(pchoice='?p=')[1].split('&')[0]
-        if(parent.href.indexOf('&p=') !== -1) userID = parent.href.split(pchoice='&p=')[1].split('&')[0]
+        if(top.href.indexOf('?p=') !== -1) userID = top.href.split(pchoice='?p=')[1].split('&')[0]
+        if(top.href.indexOf('&p=') !== -1) userID = top.href.split(pchoice='&p=')[1].split('&')[0]
       }
     </script>
   </body>

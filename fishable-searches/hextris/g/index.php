@@ -165,7 +165,7 @@
     <script type="module">
     
       import * as Coordinates from
-      "../../game_shared_assets/coordinates.min.js"
+      "../../games_shared_assets/coordinates.min.js"
       //"https://srmcgann.github.io/Coordinates/coordinates.js?2"
       //"https://whr.rf.gd/coordinates.js?2"
 
@@ -2354,3 +2354,4 @@
     </script>
   </body>
 </html>
+

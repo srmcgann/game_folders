@@ -53,13 +53,13 @@
     */
     forEach($data->{'players'} as $key=>$player){
       // player drops if unseen for 10 seconds
-      if(isset($player->{'time'}) && ($time - $player->{'time'} > 10)){
+      if(isset($player->{'time'}) && ($time - $player->{'time'} > 20)){
         unset($data->{'players'}->{$key});
       }
     }
     if($userID){
       if($has){
-        if($time - $individualPlayerData->{'time'} < 60){ // player may reconnect for up to a minute
+        if($time - $individualPlayerData->{'time'} < 120){ // player may reconnect for up to a minute
           $individualPlayerData->{'time'} = $time;
           $data->{'players'}->{$userID} = (object)$individualPlayerData;
         }

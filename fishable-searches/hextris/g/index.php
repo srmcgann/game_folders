@@ -488,7 +488,7 @@
         var rw = 100 / fact
         var sp = .2
         var geometryData, baseBox, boxShape
-        var alive, paused, base, rowsCompleted
+        var alive, paused=false, base, rowsCompleted, respawns = -1
         var pieces, basePieces, sourcePieces, maxRowsCompleted
         var baseRectangle, pieceShapes, baseShapes
         var curPiece, swapPiece, tempPiece, shadowPiece
@@ -561,7 +561,7 @@
         }
 
         const LoadGame = async () => {
-          box = Array(1e4).fill(0)
+          box = Array(4e3).fill(0)
           curPiece = {
             x, y, z,
             ix:0, iy:0, iz:0,
@@ -575,6 +575,7 @@
           alive = true
           paused = false
           rowsCompleted = 0
+          respawns++
           maxRowsCompleted = 0
           pieceQueue = []
           LoadSourcePieces()
@@ -904,15 +905,17 @@
 
         var textCanvas = document.createElement('canvas')
         var textRectShape
-        textCanvas.width = 400
-        textCanvas.height = 140
+        textCanvas.width = 450
+        textCanvas.height = 900
         var textCanvasCtx = textCanvas.getContext('2d')
         var geoOptions = {
           shapeType: 'rectangle',
           canvasTexture: textCanvas,
-          subs: 3,
-          size: 5,
-          scaleY: -1/(textCanvas.width/textCanvas.height),
+          subs: 2,
+          size: 1,
+          scaleX: 32,
+          scaleY: -32*(textCanvas.height/textCanvas.width),
+          scaleZ: 32,
           colorMix: 0,
         }
         await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
@@ -1148,6 +1151,7 @@
               y = (i - 50/fact) * mag + mag/4
               collapseRows.push(i)
               rowsCompleted++
+              if(rowsCompleted > maxRowsCompleted) maxRowsCompleted = rowsCompleted
               for(var j = 0; j < 25; j++) {
                 x = (j - 24.5/fact) * mag
                 z = 0
@@ -1210,7 +1214,7 @@
               })
             }
             CheckRows()
-            if(pc.iy < 85){
+            if(pc.iy < 90){
               SpawnPiece()
             }else{
               alive = false
@@ -1858,24 +1862,107 @@
 
           pieceShapes[base][pid].alpha = 1
 
-          console.log(Players)
-          Players.forEach((player, pidx) => {
-            if(+player.id != +userID){
-
-              textCanvasCtx.fillStyle = '#111'
-              textCanvasCtx.fillRect(0,0,textCanvas.width, textCanvas.height)
-              textCanvasCtx.fillStyle = '#fff'
+          //console.log(Players)
+          var ct = 0
+          Players.map((pl, pidx) => {
+            if(+pl.id == userID){
+              pl.respawns = respawns
+              pl.name = playerName
+              pl.paused = paused
+              pl.rowsCompleted = rowsCompleted
+              pl.maxRowsCompleted = maxRowsCompleted
+              pl.alive = alive
+              pl.curPiece = curPiece
+              var a = []
+              for(var i = 0; i<box.length; i++){
+                if(box[i]) a.push([i, box[i]])
+              }
+              pl.box = a
+            }
+            if(+pl.id != userID){
+              var player = pl
               var fs
-              textCanvasCtx.font = (fs = 32) + 'px monospace'
-              textCanvasCtx.fillText(`player   : ${player.name}`, 10,fs)
-              textCanvasCtx.fillText(`cur rows : ${player.rowsCompleted}`, 10,fs*2)
-              textCanvasCtx.fillText(`max rows : ${player.maxRowsCompleted}`, 10,fs*3)
-              textRectShape.x = -135
-              textRectShape.x = 75 + 20 * pidx
-              renderer.Draw(textRectShape)
+              textCanvasCtx.font = (fs = 34) + 'px monospace'
+              textCanvasCtx.fillStyle = player.alive || (typeof player?.alive == 'undefined')? '#182018' : '#301010'
+              textCanvasCtx.fillRect(0,0,textCanvas.width, textCanvas.height)
+              textCanvasCtx.fillStyle = player.alive ? '#020006' : '#100404'
+              textCanvasCtx.fillRect(5,5,textCanvas.width-10, textCanvas.height*.73-10+fs)
+              var ofy = textCanvas.height *.728 + fs
+
+              if(typeof player.rowsCompleted == 'undefined'){
+                textCanvasCtx.fillStyle = '#fa2'
+                textCanvasCtx.fillText(`player   :`, 10,fs + ofy)
+                textCanvasCtx.fillStyle = '#fff'
+                textCanvasCtx.fillText(`           ${player.name}`, 10,fs + ofy)
+                textCanvasCtx.fillStyle = '#fa2'
+                d = ('-').repeat((renderer.t*8|0)%5)
+                textCanvasCtx.textAlign = 'center'
+                textCanvasCtx.fillText(`<${d}awaiting join${d}>`, textCanvas.width/2,fs*3+ofy)
+                textCanvasCtx.textAlign = 'left'
+              }else{
+                textCanvasCtx.fillStyle = '#fff'
+                textCanvasCtx.fillText(`           ${player.name}`, 10,fs + ofy)
+                textCanvasCtx.fillText(`           ${player.rowsCompleted}`, 10, fs*2+ofy)
+                textCanvasCtx.fillText(`           ${player.maxRowsCompleted}`, 10, fs*3+ofy)
+                textCanvasCtx.fillText(`           ${player.respawns}`, 10, fs*4+ofy)
+                textCanvasCtx.fillText(`           ${player.alive}`, 10, fs*5+ofy)
+                textCanvasCtx.fillText(`           ${player.paused}`, 10, fs*6+ofy)
+
+                textCanvasCtx.fillStyle = '#fa2'
+                textCanvasCtx.fillText(`player   :`, 10,fs + ofy)
+                textCanvasCtx.fillText(`cur rows :`, 10, fs*2+ofy)
+                textCanvasCtx.fillText(`max rows :`, 10, fs*3+ofy)
+                textCanvasCtx.fillText(`respawns :`, 10, fs*4+ofy)
+                textCanvasCtx.fillText(`alive    :`, 10, fs*5+ofy)
+                textCanvasCtx.fillText(`paused   :`, 10, fs*6+ofy)
+              }
+
               
+              textRectShape.x = -132
+              textRectShape.y = 72 - 100 * ct
+              textRectShape.z = -.5
+              renderer.Draw(textRectShape)
+              if(typeof player?.box != 'undefined'){
+                var tbox = Array(4e3).fill(0)
+                player.box.forEach(v => {
+                  tbox[v[0]] = v[1]
+                })
+                
+                for(var i = 0; i < boxShape.vertices.length; i += 3){
+                  var idx = (i/18)|0
+                  if(tbox[idx]){
+                    var ar = Coordinates.HSVToRGB(360/totalPieces+(tbox[idx]-1), 1, .5)
+                    boxShape.map[idx*3+0] = ar[0]
+                    boxShape.map[idx*3+1] = ar[1]
+                    boxShape.map[idx*3+2] = ar[2]
+                    boxShape.vertices[i+0] = baseBox[i+0] / 1.85
+                    boxShape.vertices[i+1] = baseBox[i+1] / 2.4
+                    boxShape.vertices[i+2] = 0
+                  }else{
+                    boxShape.vertices[i+0] = 1e5
+                    boxShape.vertices[i+1] = 1e5
+                    boxShape.vertices[i+2] = 1e5
+                  }
+                }
+                boxShape.x = -132.6
+                boxShape.y = 80.9 - 100 * ct
+                boxShape.z = -1
+                renderer.Draw(boxShape)
+                
+                ct++
+              }
             }
           })
+          
+          var pl = players[0]
+          pl.alive = alive
+          pl.paused = paused
+          pl.curPiece = curPiece
+          pl.respawns = respawns
+          pl.rowsCompleted = rowsCompleted
+          pl.maxRowsCompleted = maxRowsCompleted
+          //pl.name = 
+
           for(var i = 0; i < boxShape.vertices.length; i += 3){
             var idx = (i/18)|0
             if(box[idx]){
@@ -1892,6 +1979,8 @@
               boxShape.vertices[i+2] = 1e5
             }
           }
+          boxShape.x = -1.75
+          boxShape.y = -1
           boxShape.z = -.1
           renderer.Draw(boxShape)
           
@@ -1930,16 +2019,18 @@
       var Rn = Math.random
       const spawnPlayer = (uid, max=0, speed=10, tetrises=0, respawns=0, newBoard=true) => {
         let ret = {
-          keys                : Array(128).fill().map(v=>false),
-          keyTimers           : Array(128).fill(0),
+          //keys                : Array(128).fill().map(v=>false),
+          //keyTimers           : Array(128).fill(0),
           name                : uid ? users.filter(user => +user.id == +uid)[0].name : playerName,
-          rowsCompleted       : Rn()*1e3|0,
+          rowsCompleted       : 0,
           curPiece            : [], //spawnPiece(uid),
           id                  : uid,
           swapPiece           : [],
           maxRowsCompleted    : max,
           respawns            : respawns,
           alive               : true,
+          paused              : false,
+          box                 : [],
           
           /*
           box                 : Array(10*30).fill(-1),
@@ -2053,12 +2144,12 @@
       const PlayerInit = (idx, id) => {
         if(+id==userID) return
         let newPlayer = spawnPlayer(id, 0)
-        Players[idx].player = newPlayer
-        Players[idx].scores = []
+        Players[idx] = newPlayer
+        //Players[idx].scores = []
         if(!players.filter(v=>+v.id==+id).length){
           players=[...players, newPlayer]
         }else{
-          players.filter(v=>+v.id==+id)[0] = Players[idx].player
+          players.filter(v=>+v.id==+id)[0] = Players[idx]
         }
         
         /*
@@ -2114,148 +2205,41 @@
         sync()
       }
 
-      var fullSync = false
+      var fullSync = false, l, el
       var individualPlayerData = {}
-      var cams = []
-      var l, el, omit
       const syncPlayerData = users => {
-        
         users.map((user, idx) => {
           if((typeof Players != 'undefined') &&
-             (l=Players.filter(v=>v.playerData.id == user.id)).length){
+             ((l=Players.filter(v=>v.id == user.id)).length)){
             l[0] = user
             fullSync = true
           }else if(launched){
             addPlayers(user)
           }
         })
+        
         if(launched){
-          Players = Players.filter((v, i) => {
-            if(!users.filter(q=>q.id==v.playerData.id).length){
-              cams = cams.filter((cam, idx) => idx != i)
-            }
-            return users.filter(q=>q.id==v.playerData.id).length
-          })
-          iCamsc = Players.length
+          console.log('Players', Players)
+          console.log('users', users)
           Players.map((AI, idx) => {
-            if(+AI.playerData.id == +userID){
-              individualPlayerData['id'] = userID
-              individualPlayerData['name'] = AI.playerData.name
-              individualPlayerData['time'] = AI.playerData.time
-              
-              if(typeof players == 'object' && players.length) {
-                let player = players[0]
-                let sendPlayer = {
-
-                  /*
-                  keys                : Array(128).fill().map(v=>false),
-                  keyTimers           : Array(128).fill(0),
-                  box                 : Array(10*30).fill(-1),
-                  alive               : true,
-                  name                : uid ? users.filter(user => +user.id == +uid)[0].name : playerName,
-                  deathGrow           : 0,
-                  pieceSwapped        : false,
-                  moveDecided         : false,
-                  speed               : speed,
-                  respawns            : respawns,
-                  tetrises            : tetrises,
-                  rowsCompleted       : 0,
-                  maxRowsCompleted    : max,
-                  swapPiece           : [],
-                  keyQueue            : [0, 0],
-                  curPiece            : spawnPiece(uid),
-                  id                  : uid,
-                  settledTimer        : -1,
-                  nextPieces          : Array(10).fill().map(piece=>spawnPiece(uid))
-                  */
-
-                  alive: player.alive,
-                  //box: player.box,
-                  curPiece: player.curPiece,
-                  respawns: player.respawns,
-                  //speed: player.speed,
-                  //tetrises: player.tetrises,
-                  rowsCompleted: player.rowsCompleted,
-                  maxRowsCompleted: player.maxRowsCompleted,
-                  name: player.name,
-                  id: userID,
-                }
-                //console.log(sendPlayer)
-                individualPlayerData['playerData'] = sendPlayer
-              }
-              
-              
-              if(typeof scores == 'object' && scores.length){
-                individualPlayerData['scores'] = scores
-              }
-
+            if(+AI.id == +userID){
+              individualPlayerData.id = userID
+              individualPlayerData.name = AI.name
+              individualPlayerData.time = AI.time
+              individualPlayerData.respawns = AI.respawns
+              individualPlayerData.curPiece = AI.curPiece
+              individualPlayerData.alive = AI.alive
+              individualPlayerData.paused = AI.paused
+              individualPlayerData.rowsCompleted = AI.rowsCompleted
+              individualPlayerData.maxRowsCompleted = AI.maxRowsCompleted
+              individualPlayerData.box = AI.box
             }else{
-              if(AI.playerData?.id){
-                //console.log('AI.playerData', AI.playerData)
-                el = users.filter(v=>+v.id == +AI.playerData.id)[0]
+              if(AI?.id){
+                el = users.filter(v=>+v.id == +AI.id)[0]
                 Object.entries(AI).forEach(([key,val]) => {
                   switch(key){
-                    
-                    // straight mapping of incoming data <-> players
-                    case 'playerData':
-                      if(typeof el[key] != 'undefined' && +el[key].id != +userID){
-                        let incomingPlayer = el[key]
-                        if(players.filter(v=>+v.id == +el[key].id).length){
-                          let matchingPlayer = players.filter(v=>+v.id == +el[key].id)[0]
-                          let id = +el[key].id
-                          Object.entries(incomingPlayer).forEach(([key2, val2]) => {
-                            omit = false
-                            switch(key2){
-                              //case 'Y': omit = true; break
-                              //case 'vy': omit = true; break
-                              //case 'pt': omit = true; break;
-                              //case 'rl': omit = true; break
-                            }
-                            if(!omit) {
-                              switch(key2){
-
-                                case 'alive':
-                                  matchingPlayer[key2] = val2
-                                break
-                                case 'box':
-                                  matchingPlayer[key2] = val2
-                                  //console.log('box writing', val2)
-                                break
-                                case 'curPiece':
-                                  matchingPlayer[key2] = val2
-                                break
-                                case 'respawns':
-                                  matchingPlayer[key2] = val2
-                                break
-                                case 'tetrises':
-                                  matchingPlayer[key2] = val2
-                                break
-                                case 'rowsCompleted':
-                                  matchingPlayer[key2] = val2
-                                break
-                                case 'maxRowsCompleted':
-                                  matchingPlayer[key2] = val2
-                                break
-                                case 'name':
-                                  matchingPlayer[key2] = val2
-                                break
-                                default:
-                                  if(+matchingPlayer.id != +userID) matchingPlayer[key2] = val2
-                                break
-                              }
-                            }
-                          })
-                        }
-                      }
-                    break;
-                    case 'scores':
-                      if(typeof el[key] != 'undefined'){
-                        el[key].map(score=>{
-                          players.map(player=>{
-                            if(+player.id == +score.id && score.score > player.score) player.score = score.score
-                          })
-                        })
-                      }
+                    default:
+                      AI[key] = el[key]; break;
                     break
                   }
                 })
@@ -2403,7 +2387,7 @@
       var pchoice = false
       var gmid
       if(location.href.indexOf('gmid=') !== -1){
-        var href = location.href
+        top.href = location.href
         if(href.indexOf('?g=') !== -1) gameSlug = href.split('?g=')[1].split('&')[0]
         if(href.indexOf('&g=') !== -1) gameSlug = href.split('&g=')[1].split('&')[0]
         if(href.indexOf('?gmid=') !== -1) gmid = href.split('?gmid=')[1].split('&')[0]

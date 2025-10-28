@@ -295,7 +295,7 @@
             text: '',
             color: '',
             x: 78,
-            y: -70,
+            y: -60,
             z: 0,
             roll: 0,
             pitch: 0,
@@ -421,7 +421,28 @@
             text: '',
             color: '',
             x: 78,
-            y: -50,
+            y: -45,
+            z: 0,
+            roll: 0,
+            pitch: 0,
+            yaw: 0,
+            fontSize: 50,
+          },
+          {
+            clickReady: true,
+            clickState: true,
+            oCState: true,
+            name: 'copy game link button',
+            oRot: 0,
+            rt: 0,
+            activeText: 'copy link',
+            inactiveText: 'copy link',
+            activeColor: 0x00ff88,
+            inactiveColor: 0x00ff88,
+            text: '',
+            color: '',
+            x: 78,
+            y: -75,
             z: 0,
             roll: 0,
             pitch: 0,
@@ -468,7 +489,7 @@
         var sp = .2
         var geometryData, baseBox, boxShape
         var alive, paused, base, rowsCompleted
-        var pieces, basePieces, sourcePieces
+        var pieces, basePieces, sourcePieces, maxRowsCompleted
         var baseRectangle, pieceShapes, baseShapes
         var curPiece, swapPiece, tempPiece, shadowPiece
         var didDrop, keyholdCount, keys, pieceTimer, pieceTimerInterval
@@ -554,6 +575,7 @@
           alive = true
           paused = false
           rowsCompleted = 0
+          maxRowsCompleted = 0
           pieceQueue = []
           LoadSourcePieces()
           pieces = structuredClone(sourcePieces)
@@ -674,8 +696,6 @@
               shapeType: 'custom shape',
               name: 'box',
               geometryData,
-              //size: 7,
-              //subs: 2,
               flatShading: true,
               dataArrayWidth: cl,
               dataArrayHeight: rw,
@@ -685,7 +705,7 @@
               x: -1.75,
               y: -1,
               colorMix: 0,
-              dataArrayFormat: renderer.gl.RGB, // default: renderer.gl.RGBA (w/alpha)
+              dataArrayFormat: renderer.gl.RGB,
               map: dataArray
             }
             await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
@@ -748,6 +768,15 @@
           } }
         ]
         var shader = await Coordinates.BasicShader(renderer, shaderOptions)
+
+        var shaderOptions = [
+          {lighting: {type: 'ambientLight', value: .8}},
+          { uniform: {
+            type: 'phong',
+            value: 0
+          } }
+        ]
+        var nullShader = await Coordinates.BasicShader(renderer, shaderOptions)
 
         var shaderOptions = [
           { lighting: {type: 'ambientLight', value: .1}
@@ -873,6 +902,24 @@
           sideboardTexture3.src = URL.createObjectURL(data)
         })
 
+        var textCanvas = document.createElement('canvas')
+        var textRectShape
+        textCanvas.width = 400
+        textCanvas.height = 140
+        var textCanvasCtx = textCanvas.getContext('2d')
+        var geoOptions = {
+          shapeType: 'rectangle',
+          canvasTexture: textCanvas,
+          subs: 3,
+          size: 5,
+          scaleY: -1/(textCanvas.width/textCanvas.height),
+          colorMix: 0,
+        }
+        await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
+          textRectShape = geometry
+          await nullShader.ConnectGeometry(geometry)
+        })  
+        
         var borderShape
         var geoOptions = {
           shapeType: 'obj',
@@ -1565,6 +1612,9 @@
                           case 4:  // bombs button
                             hasBombs = !hasBombs
                           break
+                          case 11:  // copy game link button
+                            fullCopy()
+                          break
                           default:
                             if(bidx > 4 && bidx < 10){ // base buttons
                               includeBases[bidx-5].include = button.clickState
@@ -1808,6 +1858,24 @@
 
           pieceShapes[base][pid].alpha = 1
 
+          console.log(Players)
+          Players.forEach((player, pidx) => {
+            if(+player.id != +userID){
+
+              textCanvasCtx.fillStyle = '#111'
+              textCanvasCtx.fillRect(0,0,textCanvas.width, textCanvas.height)
+              textCanvasCtx.fillStyle = '#fff'
+              var fs
+              textCanvasCtx.font = (fs = 32) + 'px monospace'
+              textCanvasCtx.fillText(`player   : ${player.name}`, 10,fs)
+              textCanvasCtx.fillText(`cur rows : ${player.rowsCompleted}`, 10,fs*2)
+              textCanvasCtx.fillText(`max rows : ${player.maxRowsCompleted}`, 10,fs*3)
+              textRectShape.x = -135
+              textRectShape.x = 75 + 20 * pidx
+              renderer.Draw(textRectShape)
+              
+            }
+          })
           for(var i = 0; i < boxShape.vertices.length; i += 3){
             var idx = (i/18)|0
             if(box[idx]){
@@ -1855,18 +1923,17 @@
       
       const addPlayers = playerData => {
         playerData.score = 0
-        Players = [...Players, {playerData}]
+        Players = [...Players, playerData]
         PlayerCount++
-        console.log("***********", playerData)
         PlayerInit(Players.length-1, playerData.id)
       }
-
+      var Rn = Math.random
       const spawnPlayer = (uid, max=0, speed=10, tetrises=0, respawns=0, newBoard=true) => {
         let ret = {
           keys                : Array(128).fill().map(v=>false),
           keyTimers           : Array(128).fill(0),
           name                : uid ? users.filter(user => +user.id == +uid)[0].name : playerName,
-          rowsCompleted       : 0,
+          rowsCompleted       : Rn()*1e3|0,
           curPiece            : [], //spawnPiece(uid),
           id                  : uid,
           swapPiece           : [],
@@ -1897,7 +1964,6 @@
           }
         }
         */
-        console.log('spawning player', ret)
         return ret
       }
       
@@ -1980,7 +2046,7 @@
       const MasterInit = () => {
         var tplayer
         tplayer             = spawnPlayer(0)
-        players             = [tplayer, tplayer]
+        players             = [tplayer]
       }
       
       
@@ -2104,17 +2170,17 @@
                   */
 
                   alive: player.alive,
-                  box: player.box,
+                  //box: player.box,
                   curPiece: player.curPiece,
                   respawns: player.respawns,
                   //speed: player.speed,
-                  tetrises: player.tetrises,
+                  //tetrises: player.tetrises,
                   rowsCompleted: player.rowsCompleted,
                   maxRowsCompleted: player.maxRowsCompleted,
                   name: player.name,
-                  
                   id: userID,
                 }
+                //console.log(sendPlayer)
                 individualPlayerData['playerData'] = sendPlayer
               }
               
@@ -2125,7 +2191,7 @@
 
             }else{
               if(AI.playerData?.id){
-                console.log('AI.playerData', AI.playerData)
+                //console.log('AI.playerData', AI.playerData)
                 el = users.filter(v=>+v.id == +AI.playerData.id)[0]
                 Object.entries(AI).forEach(([key,val]) => {
                   switch(key){
@@ -2153,7 +2219,7 @@
                                 break
                                 case 'box':
                                   matchingPlayer[key2] = val2
-                                  console.log('box writing', val2)
+                                  //console.log('box writing', val2)
                                 break
                                 case 'curPiece':
                                   matchingPlayer[key2] = val2
@@ -2222,7 +2288,7 @@
         }).then(res=>res.json()).then(data=>{
           if(data[0]){
             recData = data[1]
-            console.log('recData', recData)
+            //console.log('recData', recData)
             if(data[3] && userID != gmid){
               individualPlayerData = recData.players[data[3]]
             }
@@ -2231,11 +2297,10 @@
               val.id = key
               users = [...users, val]
             })
-            console.log('users', users)
+            //console.log('users', users)
             syncPlayerData(users)
             
             if(userID) playerName = recData.players[data[3]]['name']
-            console.log('player name', playerName)
             if(data[2]){ //needs reg
               regFrame.style.display = 'block'
               regFrame.src = `reg.php?g=${gameSlug}&gmid=${gmid}` 
@@ -2305,9 +2370,6 @@
         gameLink.appendChild(copyButton)
         copy()
         launchModal.style.display = 'none'
-        setTimeout(()=>{
-          mbutton = mbutton.map(v=>false)
-        },0)
       }
 
       const copy = () => {

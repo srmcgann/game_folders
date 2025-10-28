@@ -2387,7 +2387,7 @@
       var pchoice = false
       var gmid
       if(location.href.indexOf('gmid=') !== -1){
-        parent.href = location.href
+        window.href = location.href
         if(href.indexOf('?g=') !== -1) gameSlug = href.split('?g=')[1].split('&')[0]
         if(href.indexOf('&g=') !== -1) gameSlug = href.split('&g=')[1].split('&')[0]
         if(href.indexOf('?gmid=') !== -1) gmid = href.split('?gmid=')[1].split('&')[0]

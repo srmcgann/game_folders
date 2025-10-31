@@ -197,7 +197,7 @@
               }).then(res=>res.json()).then(data=>{
                 console.log(data)
                 if(data[0]){
-                  location.href = `delta/?g=${data[1]}&gmid=${data[3]}&p=${data[3]}`
+                  location.href = `g/?g=${data[1]}&gmid=${data[3]}&p=${data[3]}`
                 }else{
                   console.log('error! crap')
                 }

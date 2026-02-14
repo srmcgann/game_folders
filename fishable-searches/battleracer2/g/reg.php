@@ -3,7 +3,7 @@
   $uri = explode('gmid=', $_SERVER['REQUEST_URI']);
   if(sizeof($uri)>1){
     $gmid = explode('&', $uri[1])[0];
-    $sql = "SELECT name FROM battleracerSessions WHERE id = $gmid";
+    $sql = "SELECT name FROM battleracer2Sessions WHERE id = $gmid";
     $res = mysqli_query($link, $sql);
     $gameMaster = '';
     if(mysqli_num_rows($res)){
@@ -362,7 +362,7 @@
           ofy += fs*8
           x.font = (fs = 200) + 'px Courier Prime'
           x.fillStyle = '#0f8c'
-          x.fillText('BATTLERACER!', fs*2, ofy)
+          x.fillText('battleracer2!', fs*2, ofy)
           x.font = (fs = 55) + 'px Courier Prime'
           x.fillStyle = '#8fca'
 

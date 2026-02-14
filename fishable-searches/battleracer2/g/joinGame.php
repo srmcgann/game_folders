@@ -38,7 +38,7 @@
   function process($checkExisting = false){
     global $link, $sql, $userName, $userID, $slug, $res;
     global $gameID, $success, $msg, $gmid, $gidx, $data;
-    $sql = "SELECT data FROM battleracerGames WHERE id = $gidx";
+    $sql = "SELECT data FROM battleracer2Games WHERE id = $gidx";
     $res = mysqli_query($link, $sql);
     if(mysqli_num_rows($res)){
       $success = true;
@@ -49,7 +49,7 @@
         $msg = "re-joined game as: $userName, with slug: $slug (id=$gidx)";
       }else{
         $data = mysqli_real_escape_string($link, newUserJSON2($userName, $userID, json_decode($row['data'])));
-        $sql = "UPDATE battleracerGames SET data = \"$data\" WHERE id = $gameID";
+        $sql = "UPDATE battleracer2Games SET data = \"$data\" WHERE id = $gameID";
         mysqli_query($link, $sql);
         $msg = "joined game as: $userName, with slug: $slug (id=$gidx)";
       }
@@ -64,14 +64,14 @@
   if(isset($gameID) && $gameID){
     $gidx = $gameID;
     if($userID){
-      $sql = "SELECT * FROM battleracerSession WHERE id = $userID";
+      $sql = "SELECT * FROM battleracer2Session WHERE id = $userID";
       $res = mysqli_query($link, $sql);
       if(mysqli_num_rows($res)){
         process(true);
       }
     }else{
       $sanitizedName = mysqli_real_escape_string($link, $userName);
-      $sql = "INSERT INTO battleracerSessions (name, data, gameID) VALUES(\"$sanitizedName\", \"[]\", $gidx)";
+      $sql = "INSERT INTO battleracer2Sessions (name, data, gameID) VALUES(\"$sanitizedName\", \"[]\", $gidx)";
       mysqli_query($link, $sql);
       $userID = mysqli_insert_id($link);
       process(false);

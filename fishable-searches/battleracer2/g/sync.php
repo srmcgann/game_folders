@@ -24,7 +24,7 @@
   $row = mysqli_fetch_assoc($res);
   $time = $row['unix_timestamp()'];
 
-  $sql = "SELECT * FROM battleracerGames WHERE id = $gameID";
+  $sql = "SELECT * FROM battleracer2Games WHERE id = $gameID";
   $res = mysqli_query($link, $sql);
 
   $data = '';
@@ -72,7 +72,7 @@
         }
         $data->{'players'}->{$userID}->{'time'} = $time;
         $newData = mysqli_real_escape_string($link, json_encode($data));
-        $sql = "UPDATE battleracerGames SET data = \"$newData\" WHERE id = $gameID";
+        $sql = "UPDATE battleracer2Games SET data = \"$newData\" WHERE id = $gameID";
         mysqli_query($link, $sql);
         $needsReg = false;
       }else{

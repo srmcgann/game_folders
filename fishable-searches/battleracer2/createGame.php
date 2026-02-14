@@ -35,8 +35,8 @@
   for($i=2; $i--;){
     $table = '';
     switch($i){
-      case 0: $table = 'battleracerSessions'; break;
-      //case 1: $table = 'battleracerGames'; break;
+      case 0: $table = 'battleracer2Sessions'; break;
+      //case 1: $table = 'battleracer2Games'; break;
     }
     if($table){
       $sql = "DELETE FROM $table WHERE TIME_TO_SEC(TIMEDIFF(CURRENT_TIMESTAMP, date)) >= 600;";
@@ -48,8 +48,8 @@
   for($i=2; $i--;){
     $table = '';
     switch($i){
-      //case 0: $table = 'battleracerSessions'; break;
-      case 1: $table = 'battleracerGames'; break;
+      //case 0: $table = 'battleracer2Sessions'; break;
+      case 1: $table = 'battleracer2Games'; break;
     }
     if($table){
       $sql = "DELETE FROM $table WHERE TIME_TO_SEC(TIMEDIFF(CURRENT_TIMESTAMP, date)) >= 86400;";
@@ -63,18 +63,18 @@
   $ct = 0;
   do{
     $gidx = 1e9 + (rand()%1e8);
-    $sql = "SELECT id FROM battleracerGames WHERE id = $gidx";
+    $sql = "SELECT id FROM battleracer2Games WHERE id = $gidx";
     $res = mysqli_query($link, $sql);
     $good = mysqli_num_rows($res) == 0;
   }while(!$good && $ct<1e3);
   
   if($ct<1e3){
     $sanitizedName = mysqli_real_escape_string($link, $userName);
-    $sql = "INSERT INTO battleracerSessions (name, data, gameID) VALUES(\"$sanitizedName\", \"[]\", $gidx)";
+    $sql = "INSERT INTO battleracer2Sessions (name, data, gameID) VALUES(\"$sanitizedName\", \"[]\", $gidx)";
     mysqli_query($link, $sql);
     $userID = mysqli_insert_id($link);
     $data = mysqli_real_escape_string($link, newUserJSON($userName, $userID));
-    $sql = "INSERT INTO battleracerGames (data, id) VALUES(\"$data\", $gidx)";
+    $sql = "INSERT INTO battleracer2Games (data, id) VALUES(\"$data\", $gidx)";
     mysqli_query($link, $sql);
     $success = true;
     $slug = decToAlpha($gidx);

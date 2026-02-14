@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>BATTLERACER multiplayer/online ARENA</title>
+    <title>BATTLERACER2 multiplayer/online ARENA</title>
     <style>
       /* latin-ext */
       @font-face {
@@ -3383,7 +3383,7 @@
       individualPlayerData = {}
       syncPlayerData = users => {
         
-        /* battleracer stuff */
+        /* battleracer2 stuff */
         
         if(typeof cars != 'undefined' && cars.length){
           let keep = []

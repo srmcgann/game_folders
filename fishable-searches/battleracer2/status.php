@@ -13,7 +13,7 @@
 
   $link     = mysqli_connect($db_host,$db_user,$db_pass,$db,$port);
 
-  $sql = 'SELECT * FROM battleracerSessions';
+  $sql = 'SELECT * FROM battleracer2Sessions';
   $res = mysqli_query($link, $sql);
   echo json_encode([!!mysqli_num_rows($res)]);
 ?>

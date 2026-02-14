@@ -73,6 +73,7 @@
         'side to side' => 'sideToSideGames',
         'puyopuyo'     => 'puyopuyoGames',
         'battleracer'  => 'battleracerGames',
+        'battleracer2'  => 'battleracer2Games',
         'spelunk'      => 'spelunkGames',
       ];
       
@@ -322,6 +323,38 @@
                   }
                   if($numberPlayers >= 2) $gameFull = true;
                   $gameLink = $server['actualURL'] . "battleracer/g/?g=$slug&gmid=$gmid";
+                break;
+                case 'battleracer2':
+                  $icon = 'battleracer2Thumb.png';
+                  $data = $row;
+                  if($data['data']){
+                    $gameID = $data['id'];
+                    $slug = decToAlpha($gameID);
+                    $sql = "SELECT name, id FROM battleracer2Sessions WHERE gameID = $gameID";
+                    $res2 = mysqli_query($game_link, $sql);
+                    if(mysqli_num_rows($res2)){
+                      $row2 = mysqli_fetch_assoc($res2);
+                      $gameMaster = $row2['name'];
+                      $gmid = $row2['id'];
+                    }else{
+                      $gameMaster = '[absent]';
+                    }
+                    $tData = json_decode($data['data']);
+                    $players = $tData->{'players'};
+                    $numberPlayers = 0;
+                    $lastUpdate = 0;
+                    forEach($players as $player){
+                      forEach($player as $key2=>$val2){
+                        if($key2 == 'time'){
+                          $numberPlayers++;
+                          $lu = $val2;
+                          if($lu > $lastUpdate) $lastUpdate = $lu;
+                        }
+                      }
+                    }
+                  }
+                  if($numberPlayers >= 2) $gameFull = true;
+                  $gameLink = $server['actualURL'] . "battleracer2/g/?g=$slug&gmid=$gmid";
                 break;
                 case 'spelunk':
                   $icon = 'spelunkThumb.png';

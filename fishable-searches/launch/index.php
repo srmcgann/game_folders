@@ -60,6 +60,10 @@
         $serverList = $servers;
         $tgturl = $serverList[rand()%sizeof($serverList)]['actualURL'].$gamesel;
       break;
+      case 'battleracer2':
+        $serverList = $servers;
+        $tgturl = $serverList[rand()%sizeof($serverList)]['actualURL'].$gamesel;
+      break;
       case 'spelunk':
         $serverList = $servers;
         $tgturl = $serverList[rand()%sizeof($serverList)]['actualURL'].$gamesel;

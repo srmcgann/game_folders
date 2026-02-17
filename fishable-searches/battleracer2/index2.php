@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Coordinates boilerplate example</title>
+    <style>
+      @font-face {
+        font-family: 'Technology';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(https://srmcgann.github.io/objs/car/Technology-Bold.woff2) format('woff2');
+      }
+      html, body{
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-image: background-size: 100% 100%;
+        background-color: #000;
+        margin: 0;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      .loadingText{
+        position: absolute;
+        color: #888;
+        font-family: Technology;
+        font-size: 200px;
+        width: 600px;
+        display: block;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .overlay{
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #111e;
+        z-index: 100;
+        display: none;
+      }
+    </style>
+  </head>	
+  <body>
+<script type="module">
+
+  import * as Coordinates from
+  "https://srmcgann.github.io/Coordinates/coordinates.min.js"
+
+  var rendererOptions = {
+    ambientLight: .5, margin: 0,
+    fov: 1e3, width: 1920, height: 1080,
+    //fov: 1e3/2, width: 1920/2, height: 1080/2,
+    // uncomment above for lower-res, higher-performance canvas
+  }
+  var renderer = await Coordinates.Renderer(rendererOptions)
+
+  var c = Coordinates.Overlay.c
+  var ctx = Coordinates.Overlay.ctx
+  var w = c.width
+  var h = c.height
+  var tx, ty, fs, l, showcursor = false
+  var cFocused = false, Z
+  
+  c.onfocus = () => {
+    cFocused = true
+    showcursor = cFocused
+  }
+  
+  c.onblur = () => {
+    cFocused = false
+    showcursor = cFocused
+  }
+
+  
+  var rebindTextures = false
+  var fogColor, floorUVX, floorUVY
+  var reflectionValue = .2
+  var refractionValue = .4
+  var ambientLightValue = .4
+  var phongValue = .4
+  var fogValue = 2.75
+  
+  var floorMode = 1
+  if(location.href.split('fm=').length > 1){
+    floorMode = +location.href.split('fm=')[1].split('&')[0]
+  }
+
+  var skySel = 3
+  if(location.href.split('sky=').length > 1){
+    skySel = +location.href.split('sky=')[1].split('&')[0]
+  }
+
+  var floorSel = 3
+  if(location.href.split('fl=').length > 1){
+    floorSel = +location.href.split('fl=')[1].split('&')[0]
+  }
+  
+  var fogEnabled = false
+  if(location.href.split('fe=').length > 1){
+    fogEnabled = !!(+location.href.split('fe=')[1].split('&')[0])
+  }
+    
+
+  var refTextures = [
+    'https://srmcgann.github.io/Coordinates/resources/landscape_clouds_sun_no-floor_pseudoequirectangular_po2.png',
+   'https://srmcgann.github.io/Coordinates/resources/pinkStars_purpleLowerHalf_halfsky_equirectangular.png',
+   'https://srmcgann.github.io/Coordinates/resources/equisky_ultra.png',
+   'https://srmcgann.github.io/Coordinates/resources/callibration equirectangular image.png',
+   'https://srmcgann.github.io/skyboxes2/HDRI/1.jpg',
+   'https://srmcgann.github.io/skyboxes3/HDRI/alices.jpg',
+   'https://srmcgann.github.io/skyboxes3/HDRI/maze_light.png',
+  ]
+  var floorTextures = ['https://srmcgann.github.io/Coordinates/resources/grass_texture_lowres.jpg',
+     'https://srmcgann.github.io/Coordinates/resources/bumpmap_equirectangular_po2_colors_teal_magenta.jpg',
+     'https://srmcgann.github.io/objs/car/refraction_floor_grid.png',
+     'https://srmcgann.github.io/Coordinates/resources/monochrome_equirect_lite.jpg', 'https://srmcgann.github.io/Coordinates/resources/bumpmap_equirectangular_po2_colors_violet_puce.jpg',
+     'https://srmcgann.github.io/Coordinates/resources/bumpmap_equirectangular_po2_colors_violet_puce.jpg',
+  ]
+
+  var refTexture = refTextures[skySel]
+  var floorTexture = floorTextures[floorSel]
+  
+    
+  var S = Math.sin
+  var C = Math.cos
+  var Rn = Math.random
+  
+  var x, y, z, p, q, d
+  
+  Coordinates.AnimationLoop(renderer, 'Draw')
+
+  var shaderOptions = [
+    {lighting: {type: 'ambientLight', value: .35}},
+    { uniform: {
+      type: 'phong',
+      value: .4
+    } },
+    { uniform: {
+      type: 'reflection',
+      map: refTexture,
+      enabled: true,
+      value: .15
+    } },
+  ]
+  var carShader = await Coordinates.BasicShader(renderer, shaderOptions)
+  
+  var shaderOptions = [
+    {lighting: {type: 'ambientLight', value: .2}},
+    { uniform: {
+      type: 'phong',
+      value: .5
+    } },
+    { uniform: {
+      type: 'reflection',
+      map: refTexture,
+      enabled: true,
+      flipReflections: false,
+      value: .85,
+    } },
+    { uniform: {
+      type: 'refraction2',
+      map: refTexture,
+      enabled: true,
+      angleOfRefraction: .2,
+      value: .5,
+    } },
+  ]
+  var reflectionShader = await Coordinates.BasicShader(renderer, shaderOptions)
+
+  var shaderOptions = [
+    {lighting: {type: 'ambientLight', value: .2}},
+    { uniform: {
+      type: 'phong',
+      value: 2
+    } },
+    { uniform: {
+      type: 'reflection',
+      map: refTexture,
+      enabled: true,
+      flipReflections: false,
+      value: 0,
+    } },
+    { uniform: {
+      type: 'refraction2',
+      map: refTexture,
+      enabled: true,
+      angleOfRefraction: .05,
+      value: .75,
+    } },
+  ]
+  var floorShader = await Coordinates.BasicShader(renderer, shaderOptions)
+
+  var shaderOptions = [
+    {lighting: {type: 'ambientLight', value: 1.1}},
+    { uniform: {
+      type: 'phong',
+      value: 0
+    } }
+  ]
+  var backgroundShader = await Coordinates.BasicShader(renderer, shaderOptions)
+
+  var shapes = []
+
+  var pointArray = []
+  
+  for(var i = 0; i < 2; i++) {
+    x = S(p=Math.PI*2/2* i ) * .75
+    y = .25
+    z = C(p) * .75
+    pointArray.push([x, y, z])
+  }
+  var geoOptions = {
+    shapeType: 'dodecahedron',
+    name: 'reflectors',
+    sphereize: 1,
+    //disableDepthTest: true,
+    //alpha: .9,
+    //cullFace: '',
+    subs: 1,
+    averageNormals: true,
+    size: .2,
+    colorMix: 0,
+  }
+  await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
+    Coordinates.ShapeFromArray(geometry, pointArray).then(async res => {
+      shapes.push(res)
+      await reflectionShader.ConnectGeometry(res)
+    })
+  })  
+  
+
+  var texturePicker = new Image()
+  fetch('https://srmcgann.github.io/objs/car/texturePicker.png').then(res=>res.blob()).then(data => {
+    texturePicker.src = URL.createObjectURL(data)
+  })
+
+  var geoOptions = {
+    shapeType: 'dodecahedron',
+    name: 'background',
+    sphereize: 1,
+    subs: 4,
+    map: refTexture,
+    size: 5e3,
+    colorMix: 0,
+  }
+  await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
+    shapes.push(geometry)
+    await backgroundShader.ConnectGeometry(geometry)
+  })  
+
+  var carShape
+  var geoOptions = {
+    shapeType: 'obj',
+    name: 'car',
+    url: 'https://srmcgann.github.io/objs/car/car_engine_block_roofgun.obj',
+    map: 'https://srmcgann.github.io/objs/car/car.png',
+    scaleX: .25,
+    scaleY: .25,
+    scaleZ: .25,
+    cullface: '',
+    rotationMode: 0,
+    showNormals: false,
+    colorMix: 0,
+  }
+  await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
+    carShape = geometry
+    await carShader.ConnectGeometry(geometry)
+  })
+  window.onkeydown = e => {
+    if(e.keyCode == 37){
+      RotateFloorShapes(-1)
+    }
+    if(e.keyCode == 39){
+      RotateFloorShapes(1)
+    }
+    if(e.keyCode == 13){
+      begin()
+    }
+  }
+
+  var iFc = 3, loaded = false
+  var floorShapes = Array(iFc).fill()
+  Array(iFc).fill().map(async (v, i) => {
+    x = S(p=Math.PI*2/iFc*i + Math.PI/iFc) * 12
+    y = 0
+    z = C(p) * 12 + 12
+    var geoOptions = {
+      shapeType: 'obj',
+      name: 'floor',
+      url: `https://srmcgann.github.io/objs/car/level${i+1}_floor.obj`,
+      scaleX: 10,
+      scaleY: 10,
+      scaleZ: 10,
+      cullFace: '',
+      x, y, z,
+      //equirectangular: true,
+      //flipNormals: true,
+      rotationMode: 0,
+      color: Coordinates.HSVToHex(360/iFc*i,1,1),
+      colorMix: .05,
+    }
+    await Coordinates.LoadGeometry(renderer, geoOptions).then(async (geometry) => {
+      floorShapes[i] = geometry
+      await floorShader.ConnectGeometry(geometry)
+      if(i==iFc-1){
+        setTimeout(()=>{
+          SetLevelTextures(skySel, floorSel)
+        }, 0)
+      }
+    })
+  })
+
+  var buttons = []
+  for(var m = 0; m < 2; m++) for(var i = 0; i < 5; i++){
+    buttons.push({
+      x: 64 + 384 * i,
+      y: m ? 784 : 45,
+      name: m ? 'floor button' : 'sky button',
+      actCap: '',
+      inactCap: '',
+      activeStrokeStyle: '#0f40',
+      activeFillStyle: '#0620',
+      inactiveStrokeStyle: '#c000',
+      inactiveFillStyle: '#6000',
+      activeTextColor: '#8fc0',
+      inactiveTextColor: '#f880',
+      width: 256,
+      height: 256,
+      fontSize: 24,
+      activeState: true,
+      enabled: true,
+      toolTip: `Choose ${m ? 'floor texture' : 'skybox'} ${i+1}`,
+      hover: false,
+      clickScript: m ? `SelectFloorTexture(${i})` : `SelectSkybox(${i})`,
+    })
+  }
+
+  for(var i = 2; i--;) buttons.push({
+    x: i ? w - 200 - 360 : 200,
+    y: 540-25,
+    name: 'navButton',
+    actCap: `${i ? 'next' : 'previous'} floor shape`,
+    inactCap: `${i ? 'next' : 'previous'} floor shape`,
+    activeStrokeStyle: '#0f48',
+    activeFillStyle: '#0628',
+    inactiveStrokeStyle: '#0f48',
+    inactiveFillStyle: '#0628',
+    activeTextColor: '#8fc',
+    inactiveTextColor: '#8fc',
+    width: 360,
+    height: 50,
+    fontSize: 40,
+    activeState: true,
+    enabled: true,
+    toolTip: `previous floor shape`,
+    hover: false,
+    clickScript: `RotateFloorShapes(${i ? 1 : -1})`,
+  })
+
+
+  buttons.push({
+    x: w - 200 - 360,
+    y: 540+75,
+    name: 'launch button',
+    actCap: `launch game`,
+    inactCap: `launch game`,
+    activeStrokeStyle: '#0f48',
+    activeFillStyle: '#0628',
+    inactiveStrokeStyle: '#0f48',
+    inactiveFillStyle: '#0628',
+    activeTextColor: '#8fc',
+    inactiveTextColor: '#8fc',
+    width: 360,
+    height: 50,
+    fontSize: 40,
+    activeState: true,
+    enabled: true,
+    toolTip: `launch game`,
+    hover: false,
+    clickScript: `begin()`,
+  })
+    
+  //const LaunchGame = () => {
+  //  var fogEnabled = skySel < 2
+  //  location.href = `./g/index2.php?fm=${floorMode}&sky=${skySel}&fl=${floorSel}&fe=${fogEnabled?1:0}`
+  //}
+  
+  const RotateFloorShapes = dir => {
+    selThetav += Math.PI*2/iFc * dir
+    floorMode += dir
+    while(floorMode < 0) floorMode += iFc
+    while(floorMode >= iFc) floorMode -= iFc
+  }
+  
+  const SelectSkybox = choice => {
+    skySel = choice
+    rebindTextures = true
+    console.log('selecting skybox ' + choice)
+  }
+  
+  const SelectFloorTexture = choice => {
+    floorSel = choice
+    rebindTextures = true
+    console.log('selecting floor texture ' + choice)
+  }
+  
+
+  const HandleButtons = () => {
+
+    //ctx.fillStyle = '#f00'
+    //var s = 20
+    //ctx.fillRect(mx-s/2, my-s/2, s, s)
+    ctx.textAlign = 'center'
+    buttons.map((button, bIdx) => {
+    
+      if((bIdx == skySel && button.name == 'sky button') ||
+         (bIdx%5 == floorSel && button.name == 'floor button')){
+        ctx.strokeStyle = '#0f48'
+        ctx.lineWidth = 10
+        ctx.strokeRect(button.x - 10, button.y - 10,
+                       button.width + 20, button.height + 20)
+      }else if(button.name != 'navButton' &&
+               button.name != 'launch button'){
+        button.activeStrokeStyle = button.inactiveStrokeStyle = '#0000'
+        button.activeFillStyle = button.inactiveFillStyle = '#0000'
+      }
+      
+      if(button.name == 'navButton' && button.hover){
+        if(renderer.mouseButton == -1){
+          button.activeStrokeStyle = '#0f48'
+          button.activeFillStyle = '#0628'
+          button.inactiveStrokeStyle = '#0f48'
+          button.inactiveFillStyle = '#0628'
+          button.activeTextColor = '#8fc'
+          button.inactiveTextColor = '#8fc'
+        }else{
+          button.activeStrokeStyle = '#f408'
+          button.activeFillStyle = '#6208'
+          button.inactiveStrokeStyle = '#f408'
+          button.inactiveFillStyle = '#6208'
+          button.activeTextColor = '#fc8'
+          button.inactiveTextColor = '#fc8'
+        }
+      }
+    
+      var x1 = button.x
+      var y1 = button.y
+      var x2 = button.x + button.width
+      var y2 = button.y + button.height
+      if(button.activeState){
+        ctx.strokeStyle = button.activeStrokeStyle
+        ctx.fillStyle = button.activeFillStyle
+        ctx.fillRect(button.x, button.y, button.width, button.height)
+        ctx.strokeRect(button.x, button.y, button.width, button.height)
+        ctx.fillStyle = button.activeTextColor
+        fs = button.fontSize
+        ctx.font = fs + 'px Technology'
+        ctx.fillText(button.actCap,
+                     button.x + button.width/2,
+                     button.y + button.height/2 + fs/3)
+      }else{
+        ctx.strokeStyle = button.inactiveStrokeStyle
+        ctx.fillStyle = button.inactiveFillStyle
+        ctx.fillRect(button.x, button.y, button.width, button.height)
+        ctx.strokeRect(button.x, button.y, button.width, button.height)
+        ctx.fillStyle = button.inactiveTextColor
+        fs = button.fontSize
+        ctx.font = fs + 'px Technology'
+        ctx.fillText(button.inactCap,
+                     button.x + button.width/2,
+                     button.y + button.height/2 + fs/3)
+      }
+      ctx.font = fs + 'px Technology'
+      if((button.hover || renderer.mouseButton == -1) &&
+        mx >= x1 && mx < x2 && my >= y1 && my < y2){
+        button.hover = true
+        ctx.fillStyle = '#333c'
+        var textWidth = ctx.measureText(button.toolTip).width
+        if(c.width-mx < textWidth + 5){
+          ctx.fillRect(mx - textWidth - 20, my, textWidth + 20, fs*2)
+          ctx.fillStyle = '#fffc'
+          ctx.fillText(button.toolTip,
+                mx - textWidth/2 - 10, my+fs*1.33)
+        }else{
+          ctx.fillRect(mx - 10, my, textWidth + 20, fs*2)
+          ctx.fillStyle = '#fffc'
+          ctx.fillText(button.toolTip,
+                mx + textWidth/2, my+fs*1.33)
+        }
+        if(renderer.mouseButton != -1){
+          button.hover = false
+          button.activeState = !button.activeState
+          eval(button.clickScript)
+        }
+      }else{
+        button.hover = false
+      }
+    })
+  }
+
+  
+  if(0) Coordinates.LoadFPSControls(renderer, {
+    flyMode: true,
+    crossharSel: 2,
+    crosshairSize: .5,
+  })
+  
+  const SetLevelTextures = (skySel, floorSel) => {
+    rebindTextures = true
+    switch(floorSel){
+      case 0:
+        floorUVX = 2
+        floorUVY = 2
+      break
+      case 1:
+        floorUVX = 2
+        floorUVY = 2
+      break
+      case 2:
+        floorUVX = 1/4
+        floorUVY = 1/4
+      break
+      case 3:
+        floorUVX = 1/2
+        floorUVY = 1/2
+      break
+      case 4:
+        floorUVX = 2
+        floorUVY = 2
+      break
+      /*case 5:
+        floorUVX = 1
+        floorUVY = 1
+      break
+      */
+      default:
+        floorUVX = 1
+        floorUVY = 1
+      break
+    }
+    switch(skySel){
+      case 0:
+        //curTexture = level
+        fogColor = 0xa0f0ff
+        fogValue = 2.75
+        fogEnabled = true
+        reflectionValue = 0
+        refractionValue = 0
+        ambientLightValue = 1
+        phongValue = .4
+      break
+      case 1:
+        //curTexture = level
+        fogColor = 0x18002a
+        fogValue = 2.75 / 1.2
+        fogEnabled = true
+        reflectionValue = .1
+        refractionValue = .8
+        ambientLightValue = 1
+        phongValue = .25
+      break
+      case 2:
+        //curTexture = level
+        fogColor = 0x000000
+        fogValue = 0
+        reflectionValue = .1
+        refractionValue = .8
+        ambientLightValue = .55
+        phongValue = .2
+      break
+      case 3:
+        //curTexture = level
+        fogColor = 0x000000
+        fogValue = 0
+        fogEnabled = true
+        reflectionValue = .25
+        refractionValue = 1
+        ambientLightValue = .5
+        phongValue = .2
+      break
+      case 4:
+        //curTexture = level
+        fogColor = 0xaaeeff
+        fogValue = 0
+        reflectionValue = .2
+        refractionValue = .71
+        ambientLightValue = .3
+        phongValue = .2
+      break
+      /*
+      case 5:
+        //curTexture = level
+        fogColor = 0xaaeeff
+        fogValue = 0
+        reflectionValue = .2
+        refractionValue = .72
+        ambientLightValue = .3
+        phongValue = .2
+      break
+      case 6:
+        //curTexture = level
+        floorUVX = 1/8
+        floorUVY = 1/8
+        fogColor = 0xaaeeff
+        fogValue = 0
+        reflectionValue = .2
+        refractionValue = .4
+        ambientLightValue = .3
+        phongValue = .1
+      break
+      */
+    }
+  }
+  
+  const RebindTexturesMaybe = shape => {
+    if(rebindTextures){
+      SetLevelTextures(skySel, floorSel)
+      if(shape.name == 'floor'){
+          shape.map = floorTextures[floorSel]
+          shape.rebindTextures = true
+      }
+      if(shape.name == 'floor' && shape?.uvs && shape.uvs.length){
+        shape.scaleUVX = floorUVX
+        shape.scaleUVY = floorUVY
+      }
+      var el = shape.shader?.datasets.filter(dset=>dset?.optionalLighting)
+      el.map(el2=>{
+        el2.optionalLighting.filter(v=>v.name=='ambientLight').map(oU => {
+          if(shape.name != 'reflectors') oU.value = ambientLightValue
+        })
+      })
+      var el = shape.shader?.datasets.filter(dset=>dset?.optionalUniforms)
+      el.map(el2=>{
+        el2.optionalUniforms.filter(v=>v.name=='phong').map(oU => {
+          if(shape.name != 'reflectors') oU.value = phongValue
+        })
+        if(shape.name != 'reflectors') el2.optionalUniforms.filter(v=>v.name=='fog').map(oU => {
+          oU.color = fogColor
+          oU.value = fogValue
+          oU.enabled = fogEnabled
+        })
+        el2.optionalUniforms.filter(v=>v.name=='reflection').map(oU => {
+          oU.map = refTextures[skySel]
+          if(shape.name != 'reflectors') oU.value = reflectionValue
+          oU.rebindTextures = true
+        })
+        el2.optionalUniforms.filter(v=>v.name=='refraction2').map(oU => {
+          oU.map = refTextures[skySel]
+          if(shape.name != 'reflectors') oU.value = refractionValue
+          oU.rebindTextures = true
+        })
+      })
+    }
+  }
+  
+  
+  
+  /////////////////// net
+  
+  var cursorPos = 0
+  var curInputLeft = ''
+  var curInputRight = ''
+  var mask = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-=_+`~\][|}{\'":;/.,?>< '
+       
+       
+  const begin = () => {
+    if(!userName.length){
+      alert('user name is required')
+    }
+    if(userName.length && userName.split('').filter(v=>v.charCodeAt(0)!=32).join('').length){
+      userName = userName.split('').filter((v,i)=>i<10).join('')
+      let sendData = {
+        userName
+      }
+      fetch('createGame.php',{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sendData),
+      }).then(res=>res.json()).then(data=>{
+        console.log(data)
+        if(data[0]){
+          var fogEnabled = skySel < 2
+          location.href = `./g/index2.php?g=${data[1]}&gmid=${data[3]}&p=${data[3]}&fm=${floorMode}&sky=${skySel}&fl=${floorSel}&fe=${fogEnabled?1:0}`
+        }else{
+          console.log('error! crap')
+        }
+      })
+    }
+  }
+
+
+  c.onkeydown = e => {
+    e.preventDefault()
+    e.stopPropagation()
+    switch (e.key){
+      case 'Enter':
+        if((curInputLeft + curInputRight) != ''){
+          begin()
+        }
+      break
+      case 'Backspace':
+        curInputLeft = curInputLeft.substr(0, curInputLeft.length-1)
+      break
+      case 'Delete':
+        curInputRight = curInputRight.substr(1)
+      break
+      case 'ArrowLeft':
+        curInputRight = curInputLeft.substr(curInputLeft.length-1) + curInputRight
+        curInputLeft = curInputLeft.substr(0, curInputLeft.length-1)
+      break
+      case 'ArrowUp':
+      break
+      case 'ArrowRight':
+        curInputLeft = curInputLeft + curInputRight.substr(0,1)
+        curInputRight = curInputRight.substr(1)
+      break
+      case 'ArrowDown':
+      break
+      default:
+        curInputLeft += mask.indexOf(l=e.key) !== -1 ? l : ''
+      break 
+    }
+  }
+  
+  c.focus()
+
+
+  //globals
+  var userName = ''
+  
+  const stroke = (scol, fcol, lwo=1, od=true, oga=1) => {
+    if(scol){
+      //ctx.closePath()
+      if(od) ctx.globalAlpha = .2*oga
+      ctx.strokeStyle = scol
+      ctx.lineWidth = Math.min(1000,100*lwo/Z)
+      if(od) ctx.stroke()
+      ctx.lineWidth /= 4
+      ctx.globalAlpha = 1*oga
+      ctx.stroke()
+    }
+    if(fcol){
+      ctx.globalAlpha = 1*oga
+      ctx.fillStyle = fcol
+      ctx.fill()
+    }
+  }
+
+  const renderInput = (textVar, X, Y, w, h, placeholder, caption) => {
+    var t = renderer.t
+    tx = X
+    ty = Y
+    let ofx
+    ctx.fillStyle = '#112c'
+    ctx.fillRect(tx,ty,w,h)
+    ctx.strokeStyle = '#2fa4'
+    ctx.lineWidth = 10
+    ctx.strokeRect(tx, ty, w, h)
+    let fs
+    ctx.font = (fs = 50) + "px Technology"
+    ctx.fillStyle = '#0f8a'
+    ctx.strokeStyle = '#000'
+    ctx.strokeText(caption, tx, ty-fs/2, w, h)
+    ctx.fillText(caption, tx, ty-fs/2, w, h)
+    ctx.fillStyle = eval(`${textVar} ? '#fff' : '#888'`) 
+    ctx.strokeStyle = '#2fa4'
+    eval(`ctx.fillText(${textVar} ? ${textVar} : placeholder, tx + 20, ty+=fs)`)
+    eval(`${textVar} = curInputLeft + curInputRight`)
+    if(showcursor && ((t*60|0)%30)<15){
+      ofx = ctx.measureText(curInputLeft).width
+      ctx.beginPath()
+      ctx.lineTo(tx + ofx + fs/2, ty-fs/1.25)
+      ctx.lineTo(tx + ofx + fs/2, ty-fs/1.25+fs)
+      Z = 1
+      stroke('#f00','',.25,true)
+    }
+  }
+
+  
+  ///////////////////
+
+  
+  
+  
+  
+
+  renderer.z = 20
+  var sel = 0, selTheta = Math.PI*2/iFc * (floorMode - 1)
+  var selThetav = selTheta
+  var mx = renderer.mouseX
+  var my = renderer.mouseY
+  
+  window.Draw = () => {
+    var t = renderer.t
+    renderer.Clear()
+    ctx.clearRect(0,0,w,h)
+    
+    mx = renderer.mouseX
+    my = renderer.mouseY
+    
+    
+    
+    
+    ctx.globalAlpha = buttons.filter( button => {
+      return button.hover && button.name != 'navButton'
+    }).length ? 1 : .5
+    ctx.drawImage(texturePicker, 0,0,w,h)
+    ctx.globalAlpha = 1
+    
+    HandleButtons()
+    
+    renderer.y = -.25
+    renderer.yaw = S(t/4)/2
+    renderer.pitch = -.5+C(t/8)/4
+    
+    renderer.clearColor = 0x000000
+    
+    selTheta += Math.min(.1,
+                  Math.abs(selThetav - selTheta)) * 
+                  (selTheta > selThetav ? -1: 1)
+
+
+      
+    var fsyaw = Math.min(Math.PI*1.5, Math.max(0, (.8+C(t/4))*Math.PI*1.1)) + Math.PI
+    var fspitch = Math.min(.2, Math.max(-.2, -C(t)*.5))
+    for(var i = 0; i < iFc; i++){
+      if(typeof floorShapes[i] != 'undefined'){
+        x = S(p=Math.PI*2/iFc*i + Math.PI/iFc + selTheta) * 12
+        y = 0
+        z = C(p) * 12 + 12
+        var floorShape = floorShapes[i]
+        renderer.z = Math.min(5, Math.max(1.5, (.3+C(t/2))*6))
+        //renderer.pitch = -.5
+        //renderer.yaw = C(t/4)/4
+        floorShape.yaw = fsyaw
+        floorShape.pitch = fspitch
+        floorShape.x = x
+        floorShape.y = y
+        floorShape.z = z
+        RebindTexturesMaybe(floorShape)
+        renderer.Draw(floorShape)
+        
+        carShape.yaw = floorShape.yaw
+        carShape.pitch = floorShape.pitch
+      }
+      
+      x = S(p=Math.PI) * 12
+      y = 0
+      z = C(p) * 12 + 12
+      carShape.x = x
+      carShape.y = y + .2
+      carShape.z = z
+      RebindTexturesMaybe(carShape)
+      renderer.Draw(carShape)
+    }
+    
+    shapes.forEach(shape => {
+      switch(shape.name){
+        case 'background':
+          //shape.yaw += .005
+          if(rebindTextures){
+            shape.map = refTextures[skySel]
+            shape.rebindTextures = true
+          }
+          //RebindTexturesMaybe(shape)
+          renderer.Draw(shape)
+        break
+        case 'reflectors':
+          RebindTexturesMaybe(shape)
+          shape.yaw = fsyaw - t
+          shape.pitch = fspitch
+          renderer.Draw(shape)
+        break
+        default:
+          RebindTexturesMaybe(shape)
+          renderer.Draw(shape)
+        break
+      }
+    })
+    rebindTextures = false
+
+    
+    var ofy = 370
+    ctx.textAlign = 'left'
+    renderInput('userName', w/2 + 400, ofy + fs*1.25, 400, 70, 'name', 'enter your name')    
+  }
+  
+</script>
+  </body>
+</html>

@@ -3342,7 +3342,7 @@
         requestAnimationFrame(Draw)
       }
 
-      alphaToDec = val => {
+      const alphaToDec = val => {
         let pow=0
         let res=0
         let cur, mul
@@ -3633,6 +3633,7 @@
               if(!gameConnected){
                 setInterval(()=>{sync()}, pollFreq = 500)  //ms
                 gameConnected = true
+                console.log('syncing')
               }
               if(!launched){
                 launchStatus.innerHTML = ''

@@ -967,17 +967,26 @@
         x: 0,
         y: 0,
         z: 0,
+        lX: 0,
+        lY: 0,
+        lZ: 0,
         vx: 0,
         vy: 0,
         vz: 0,
+        lVx: 0,
+        lVy: 0,
+        lVz: 0,
         id: '',
+        name: '',
         ovx: 0,
         ovy: 0,
         ovz: 0,
         roll: 0,
         pitch: 0,
-        name: '',
         yaw: 0,
+        lRoll: 0,
+        lPitch: 0,
+        lYaw: 0,
         rollv: 0,
         pitchv: 0,
         yawv: 0,
@@ -2282,6 +2291,12 @@
           car.ovy = car.y
           car.ovz = car.z
 
+          if(cIdx){
+            car.x += (car.lX - car.x) / lerpFactor
+            car.y += (car.lY - car.y) / lerpFactor
+            car.z += (car.lZ - car.z) / lerpFactor
+          }
+
           car.x += car.vx
           car.y += car.vy -= grav * (car.hasTraction ? 0 : 1)
           car.z += car.vz
@@ -2592,6 +2607,12 @@
             //car.yaw += Math.PI * 2
             //car.yawv += Math.PI * 2
           //}
+          
+          if(cIdx){
+            car.roll  += (car.lRoll - car.roll) / lerpFactor
+            car.pitch += (car.lPitch - car.pitch) / lerpFactor
+            car.yaw   += (car.lYaw - car.yaw) / lerpFactor
+          }
           
           car.rollv += (car.roll - car.rollv) / 2
           car.pitchv += (car.pitch - car.pitchv) / 2
@@ -3215,7 +3236,7 @@
       var showCars = true
       var camSelected = 0
       var maxCamDist = 25
-      var lerpFactor = 20
+      var lerpFactor = 10
       var crashDamage = .2
       var crosshairSel = 0
       var showGyro = false
@@ -3445,9 +3466,9 @@
                   roll: car.roll,
                   pitch: car.pitch,
                   yaw: car.yaw,
-                  vx: car.vx,
-                  vy: car.vy,
-                  vz: car.vz,
+                  //vx: car.vx,
+                  //vy: car.vy,
+                  //vz: car.vz,
                   firing: !!car.firing,
                   missiles: car.missiles,
                   hasGun: !!car.hasGun,
@@ -3522,27 +3543,27 @@
                                     matchingCar.name = val2
                                   break
                                   case 'x':
-                                    matchingCar.x = +val2
+                                    matchingCar.lX = +val2
                                   break
                                   case 'y':
-                                    matchingCar.y = +val2
+                                    matchingCar.lY = +val2
                                   break
                                   case 'z':
-                                    matchingCar.z = +val2
+                                    matchingCar.lZ = +val2
                                   break
                                   case 'firing':
                                     matchingCar.firing = !!val2
                                   break
                                   case 'roll':
-                                    matchingCar.roll = +val2
+                                    matchingCar.lRoll = +val2
                                   break
                                   case 'pitch':
-                                    matchingCar.pitch = +val2
+                                    matchingCar.lPitch = +val2
                                   break
                                   case 'yaw':
-                                    matchingCar.yaw = +val2
+                                    matchingCar.lYaw = +val2
                                   break
-                                  case 'vx':
+                                  /*case 'vx':
                                     matchingCar.vx = +val2
                                   break
                                   case 'vy':
@@ -3550,7 +3571,7 @@
                                   break
                                   case 'vz':
                                     matchingCar.vz = +val2
-                                  break
+                                  break*/
                                   case 'health':
                                     matchingCar.health = +val2
                                   break

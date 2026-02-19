@@ -1,4 +1,5 @@
 <!--
+<!--
   to-do:
     ✔ AI players
     ✔ fix heat seeking
@@ -23,7 +24,8 @@
     ✔ different floors for each level
     ✔ logical levels / texture motifs, transition points
     ✔ performance optimization
-    * online
+    ✔ online
+    ✔ in-game link button
 -->
 <!DOCTYPE html>
 <html>
@@ -45,6 +47,7 @@
         margin: 0;
         min-height: 100vh;
         overflow: hidden;
+        font-family: Technology;
       }
       .loadingText{
         position: absolute;
@@ -97,7 +100,7 @@
         padding: 3px;
         min-width: 200px;
         cursor: pointer;
-        font-family: Courier Prime;
+        font-family: Technology;
       }
       .copyButton{
         display: inline-block;
@@ -155,6 +158,16 @@
     </style>
   </head>
   <body>
+    <div id="copyConfirmation"><div id="innerCopied">COPIED!</div></div>
+    <canvas id="c" tabindex=0></canvas>
+    <iframe id="regFrame"></iframe>
+    <div id="launchModal">
+      GAME IS LIVE!<br><br>
+      <div id="gameLink"></div>
+      <br><br><br><br>
+      ...awaiting players...<br>
+      <div id="launchStatus"></div>
+    </div>
     <div class="loadingText" id="loadingTextDiv">loading....</div>
     <script type="module">
       window.addEventListener('load', () => { window.loaded = true } ) 
@@ -472,7 +485,7 @@
       var C = Math.cos
       var Rn = Math.random
 
-      var x, y, z, p, q, d, fs, str
+      var x, y, z, p, q, d, fs, str, l
 
       Coordinates.AnimationLoop(renderer, 'Draw')
 
@@ -616,6 +629,7 @@
           e.preventDefault()
           e.stopPropagation()
         }
+        if(typeof cars == 'undefined' || !cars.length) return
         switch(e.keyCode){
           case 48: // 0
             cameraCar = 0
@@ -631,6 +645,9 @@
           case 57: // 9
             if(cars.length > e.keyCode - 48) cameraCar = e.keyCode - 48
           break
+          case 32: // space
+            cars[0].firing = true
+          break
         }
         if(e.keyCode == 84){
           showStats = !showStats
@@ -640,8 +657,39 @@
       }
 
       window.onkeyup = e => {
-        cars[0].keys[e.keyCode] = false
-        cars[0].keyTimers[e.keyCode] = 0
+        if(typeof cars != 'undefined' && cars.length){
+          cars[0].keys[e.keyCode] = false
+          cars[0].keyTimers[e.keyCode] = 0
+          switch(e.keyCode){
+            case 32: // space
+              cars[0].missileTimer = 0
+              cars[0].firing = false
+            break
+          }
+        }
+      }
+
+      const FireMissile = car => {
+        car.missiles -- 
+        SpawnRPG(car)
+
+        var tx = 0
+        var ty = 1
+        var tz = 1.1
+        p = Math.atan2(ty, tz) + car.pitch
+        d = Math.hypot(ty, tz)
+        ty = S(p) * d
+        tz = C(p) * d
+        p = Math.atan2(tx, ty) + car.roll
+        d = Math.hypot(tx, ty)
+        tx = S(p) * d
+        ty = C(p) * d
+        p = Math.atan2(tx, tz) + car.yaw
+        d = Math.hypot(tx, tz)
+        tx = S(p) * d
+        tz = C(p) * d
+
+        SpawnFlash(car.x + tx, car.y + ty + 1, car.z + tz, 1)
       }
 
       const DoKeys = car => {
@@ -649,33 +697,11 @@
           if(state && car.keyTimers[key] < renderer.t){
             switch(key){
               case 32:
-                if(car.hasCannon && car.missiles > 0){
-                  car.missiles -- 
-                  car.keyTimers[key] = renderer.t + keyInterval
-                  SpawnRPG(car)
-
-                  var tx = 0
-                  var ty = 1
-                  var tz = 1.1
-                  p = Math.atan2(ty, tz) + car.pitch
-                  d = Math.hypot(ty, tz)
-                  ty = S(p) * d
-                  tz = C(p) * d
-                  p = Math.atan2(tx, ty) + car.roll
-                  d = Math.hypot(tx, ty)
-                  tx = S(p) * d
-                  ty = C(p) * d
-                  p = Math.atan2(tx, tz) + car.yaw
-                  d = Math.hypot(tx, tz)
-                  tx = S(p) * d
-                  tz = C(p) * d
-
-                  SpawnFlash(car.x + tx, car.y + ty + 1, car.z + tz, 1)
-                }
+                //car.keyTimers[key] = renderer.t + keyInterval
                 break
               case 71:
                 car.keyTimers[key] = renderer.t + keyInterval
-                //car.hasCannon = !car.hasCannon
+                //car.hasGun = !car.hasGun
               break
               case 72:
                 car.keyTimers[key] = renderer.t + keyInterval
@@ -753,6 +779,7 @@
       var showHUD = true
       var promptVisible = false
       var defaultFollowDistance = 10
+      var missileInterval = .2
       var iSmokev = .05
       var iSparksv = .25
       var iRPGv = 5
@@ -772,6 +799,27 @@
       var ls = 2**.5 * sp / 2
       
       var buttons = [
+        {
+          x: c.width - 250,
+          y: 5,
+          name: 'game link button',
+          actCap: '\uD83D\uDD17',
+          inactCap: '\uD83D\uDD17',
+          activeStrokeStyle: '#0ff8',
+          activeFillStyle: '#0448',
+          inactiveStrokeStyle: '#0ff8',
+          inactiveFillStyle: '#0448',
+          activeTextColor: '#8cf',
+          inactiveTextColor: '#8cf',
+          width: 32,
+          height: 32,
+          fontSize: 24,
+          activeState: true,
+          enabled: true,
+          toolTip: 'copy game link',
+          hover: false,
+          clickScript: 'copy()',
+        },
         {
           x: c.width - 200,
           y: 5,
@@ -946,11 +994,14 @@
         painAlpha: 0,
         accelVel: .02,
         wheelTurn: 0,
+        firing: false,
+        missileTimer: 0,
         cameraMode: 'fps', // fps | orbit
         speed: .1,
+        idx: 0,
         distance: 0,
         missiles: 0,
-        hasCannon: false,
+        hasGun: false,
         bounced: false,
         actualSpeed: 0,
         followDistance: 0,
@@ -965,11 +1016,22 @@
       
       renderer.fov = carPrototype.cameraMode == 'fps' ? 1001 : 1e3
 
-      var iCarsc = 1
+      const SpawnCar = (X, Y, Z, id) => {
+        var ret = structuredClone(carPrototype)
+        ret.id = +id
+        ret.idx = cars.length
+        ret.x = X
+        ret.y = Y
+        ret.z = Z
+        return ret
+      }
+
+      var iCarsc = 0
       var cars = Array(iCarsc).fill().map((v, i) => {
         var ret = structuredClone(carPrototype)
         ret.x = (-iCarsc/2 + i + .5) *10
-        ret.id = i
+        ret.id = userID
+        ret.idx = i
         ret.name = i ? `AI PLAYER ${i}` : 'human'
         if(0) if(i) ret.followTarget = cars[i-1]
         return ret
@@ -977,7 +1039,7 @@
       
       const Respawn = car => {
         var ret = structuredClone(carPrototype)
-        ret.x = (-iCarsc/2 + car.id + .5) *10
+        ret.x = 0 //(-iCarsc/2 + car.id + .5) *10
         ret.keys = Array(256).fill(false)
         ret.keyTimers = Array(256).fill(0)
         Object.keys(car).forEach(key => {
@@ -1553,7 +1615,7 @@
           rollv: car.roll,
           pitchv: car.pitch,
           yawv: car.yaw,
-          id: car.id,
+          id: car.idx,
         })
         
         // missile sounds
@@ -1567,11 +1629,11 @@
 
       const CarShape = car => {
         var ret
-        if(car.hasOverdrive && car.hasCannon){
+        if(car.hasOverdrive && car.hasGun){
           ret = gunEngineCarShape
-        }else if(car.hasOverdrive && !car.hasCannon){
+        }else if(car.hasOverdrive && !car.hasGun){
           ret = engineCarShape
-        }else if(!car.hasOverdrive && car.hasCannon){
+        }else if(!car.hasOverdrive && car.hasGun){
           ret = gunCarShape
         }else{
           ret = carShape
@@ -1580,7 +1642,7 @@
       }
 
       const DrawHUD = car => {
-        if(car.cameraMode == 'fps' && cameraCar == car.id) return
+        if(car.cameraMode == 'fps' && cameraCar == car.idx) return
         var coord = Coordinates.GetShaderCoord(car.x + car.vx,
                                                car.y + car.vy + 1,
                                                car.z + car.vz,
@@ -1666,7 +1728,7 @@
           str = `speed     : ${Math.round(car.actualSpeed*50*10)/10} MPH`
           ctx.strokeText(str, x2, y2 + fs * 3)
           ctx.fillText(str, x2, y2 + fs * 3)
-          str = `gun       : ${car.hasCannon}`
+          str = `gun       : ${car.hasGun}`
           ctx.strokeText(str, x2, y2 + fs * 4)
           ctx.fillText(str, x2, y2 + fs * 4)
           str = `o-drive   : ${car.hasOverdrive}`
@@ -1772,6 +1834,7 @@
           }
           powerup.life -= .25
           cars.map((car, cIdx) => {
+            car.idx = cIdx
             var dist = Math.hypot(powerup.x - car.x,
                                   //powerup.y - car.y + 3,
                                   powerup.z - car.z)
@@ -1790,7 +1853,7 @@
                   car.missiles += 25
                 break
                 case 'cannon':
-                  car.hasCannon = true
+                  car.hasGun = true
                 break
                 case 'overdrive':
                   car.hasOverdrive = true
@@ -2098,6 +2161,8 @@
         renderer.Clear()
         ctx.clearRect(0,0,w,h)
         sctx.clearRect(0,0,w,h)
+        
+        if(!cars.length) return
 
         ManagePowerups()
 
@@ -2109,8 +2174,13 @@
         var fs
 
         cars.map((car, cIdx) => {
+          if(car.missileTimer <= t && car.firing &&
+             car.hasGun && car.missiles > 0) {
+               FireMissile(car)
+               car.missileTimer = t + missileInterval
+          }
           if(showHUD) DrawHUD(car)
-          switch(cIdx){
+          if(!cIdx) switch(cIdx){
             case 0:  // this player
               break
             default: // other players
@@ -2134,7 +2204,7 @@
               }
               break
           }
-          DoKeys(car) 
+          if(!cIdx) DoKeys(car) 
         })
 
         //var floor = -Floor(-renderer.x, -renderer.z) - 20 // 6
@@ -2336,9 +2406,9 @@
                 ctx.fillStyle = q.missiles ? '#0f2' : '#f00'
                 ctx.strokeText(`            ${q.missiles}`, w-220, fs*4 + fs*9*j + ofy)
                 ctx.fillText(`            ${q.missiles}`, w-220, fs*4 + fs*9*j + ofy)
-                ctx.fillStyle = q.hasCannon ? '#0f2' : '#f00'
-                ctx.strokeText(`            ${q.hasCannon?'YES':'NO'}`, w-220, fs*5 + fs*9*j + ofy)
-                ctx.fillText(`            ${q.hasCannon?'YES':'NO'}`, w-220, fs*5 + fs*9*j + ofy)
+                ctx.fillStyle = q.hasGun ? '#0f2' : '#f00'
+                ctx.strokeText(`            ${q.hasGun?'YES':'NO'}`, w-220, fs*5 + fs*9*j + ofy)
+                ctx.fillText(`            ${q.hasGun?'YES':'NO'}`, w-220, fs*5 + fs*9*j + ofy)
                 ctx.fillStyle = q.hasOverdrive? '#0f2' : '#f00'
                 ctx.strokeText(`            ${q.hasOverdrive ? 'YES' : 'NO'}`, w-220, fs*6 + fs*9*j + ofy)
                 ctx.fillText(`            ${q.hasOverdrive ? 'YES' : 'NO'}`, w-220, fs*6 + fs*9*j + ofy)
@@ -2405,7 +2475,7 @@
                   car.followTarget = powerup
                 }
               })
-            }else if(car.hasCannon && car.missiles){
+            }else if(car.hasGun && car.missiles){
               cars.map((car2, cIdx2) => {
                 if(cIdx != cIdx2){
                   if((d = Math.hypot(car2.x-car.x,
@@ -2431,7 +2501,7 @@
                   car.followTarget = powerup
                 }
               })
-            }else if(!car.hasCannon &&
+            }else if(!car.hasGun &&
                 (el=powerups.filter(powerup => powerup.name == 'cannon')).length){
               el.map((powerup, pIdx) => {
                 var plife = powerup.life
@@ -2459,7 +2529,7 @@
             }
             if(car.followTarget === false){
               // did not find a suitable powerup
-              if(car.hasCannon && car.missiles){
+              if(car.hasGun && car.missiles){
                 cars.map((car2, cIdx2) => {
                   if(cIdx != cIdx2){
                     if((d = Math.hypot(car2.x-car.x,
@@ -2746,6 +2816,7 @@
               break
             case 'floor':
               var car = cars[cameraCar]
+              //console.log(cars,car)
               shape.shapeData.map((subShape, sIdx) => {
                 while(-car.x + subShape.x + subShape.ox > cl * sp * 1.5){
                   subShape.x -= cl*sp*3
@@ -3108,7 +3179,161 @@
           renderer.showCrosshair = cars[cameraCar].cameraMode == 'orbit' ||
                                    !showHUD
         //}
+        
+        ctx.globalAlpha = 1
+
+        flashNotices = flashNotices.filter(v=>v[2]>0)
+        if(flashNotices.length){
+          ctx.fillStyle = flashNotices[l=flashNotices.length-1][1]
+          ctx.globalAlpha = flashNotices[l][2]
+          ctx.textAlign = 'center'
+          ctx.fillRect(0,0,c.width,c.height)
+          ctx.fillStyle = '#fff'
+          ctx.font = (fs=60)+'px Technology'
+          ctx.fillText(flashNotices[l][0],c.width/2, c.height/1.6 - fs)
+          flashNotices[l][2]-=.04
+        }
+        
       }
+      
+      var cams = []
+      var grav = .66
+      var iCarsc = 1
+      var sparks = []
+      var iDrift = 50
+      var camDist = 7
+      var scores = []
+      var sliders = []
+      var flashes = []
+      var bullets = []
+      var iSparkv = .4
+      var iBulletv = 16
+      var maxSpeed = 500
+      var powerups = []
+      var carTrails = []
+      var showDash = true
+      var showCars = true
+      var camSelected = 0
+      var maxCamDist = 25
+      var lerpFactor = 20
+      var crashDamage = .2
+      var crosshairSel = 0
+      var showGyro = false
+      var smokeTrails = []
+      var showOrigin = true
+      var flashNotices = []
+      var bulletDamage = .05
+      var powerupFreq = 250
+      var showstars = true
+      var mapChoice= 'topo'
+      var showFloor = true
+      var camModeStyles = 2
+      var camFollowSpeed = 4
+      var maxTurnRadius = .1
+      var showCrosshair = true
+      var camSelHasChanged = false
+      var dashHasBeenHidden = false
+      var hotkeysModalVisible = false
+      var keyTimerInterval = 1/60*5 // .25 sec
+
+      var PlayerCount                = 0
+      var Players                    = []
+        
+      
+      async function masterInit(){
+        cams = []
+        grav = .66
+        iCarsc = 1
+        sparks = []
+        iDrift = 50
+        camDist = 7
+        scores = []
+        sliders = []
+        flashes = []
+        bullets = []
+        iSparkv = .4
+        iBulletv = 16
+        maxSpeed = 500
+        powerups = []
+        carTrails = []
+        showDash = true
+        showCars = true
+        camSelected = 0
+        maxCamDist = 25
+        lerpFactor = 20
+        crashDamage = .2
+        crosshairSel = 0
+        showGyro = false
+        smokeTrails = []
+        showOrigin = true
+        flashNotices = []
+        bulletDamage = .05
+        powerupFreq = 250
+        showstars = true
+        mapChoice= 'topo'
+        showFloor = true
+        camModeStyles = 2
+        camFollowSpeed = 4
+        maxTurnRadius = .1
+        showCrosshair = true
+        camSelHasChanged = false
+        dashHasBeenHidden = false
+        hotkeysModalVisible = false
+        keyTimerInterval = 1/60*5 // .25 sec
+        
+        PlayerCount                = 0
+        Players                    = []
+      }
+      await masterInit()
+          
+      
+      const PlayerInit = (idx, id) => { // called initially & when a player dies
+        //Players[idx].car.drift = iDrift
+        //Players[idx].powerups = []
+        //Players[idx].scores = []
+        if(!cars.filter(v=>+v.id==+id).length){
+          var newCar = SpawnCar(0, 0, 0, id)
+          newCar.id = id
+          newCar.y = Floor(newCar.x, newCar.z) + (4.6 + 2.5)* wmag
+          Players[idx].car = newCar
+          newCar.idx = cars.length
+          cars.push(newCar)
+          var el = cars.filter((v, i) => +v.id == +userID)
+          if(el.length){
+            var a = [el[0]]
+            cars.map((v, i) => {
+              if(+v.id != +userID) a.push(v)
+            })
+            cars = a
+          }
+        }else{
+          Players[idx].car = cars.filter(v=>+v.id==+id)[0]
+        }
+      }
+
+      const addPlayers = playerData => {
+        playerData.score = 0
+        Players = [...Players, {playerData}]
+        PlayerCount++
+        PlayerInit(Players.length-1, playerData.id)
+      }
+
+      const spawnFlashNotice = (text, col='#8888')=>{
+        flashNotices = [...flashNotices, [text, col, 1]]
+        while(flashNotices.length>3) flashNotices.shift()
+      }
+
+      const spawnCam = car => {
+        
+        X = car.X
+        Z = car.Z - camDist
+        Y = floor(X, Z) - 10
+        R(0, 0, 0)
+        return {
+          X, Y, Z
+        }
+      }
+          
 
 
 
@@ -3144,7 +3369,7 @@
         //Draw()
       }
 
-      var doJoined = jid => {
+      window.doJoined = jid => {
         regFrame.style.display = 'none'
         regFrame.src = ''
         userID = +jid
@@ -3152,6 +3377,7 @@
       }
 
       var fullSync = false
+      var camSelected
       var individualPlayerData = {}
       const syncPlayerData = users => {
         
@@ -3165,7 +3391,7 @@
             })
           })
           cars = cars.filter((car, idx) => {
-            let ret = !!keep.filter(v=>v==idx).length
+            let ret = !idx || !!keep.filter(v=>v==idx).length
             if(!ret){
               camSelected = 0
               spawnFlashNotice(car.name + ' has left the arena...', '#00f')
@@ -3175,28 +3401,29 @@
         }
         
         /*********************/
-        
+        //console.log('users', users)
         users.map((user, idx) => {
           if((typeof Players != 'undefined') &&
-             (l=Players.filter(v=>v.playerData.id == user.id)).length){
+             (l=Players.filter(v=>+v.playerData.id == +user.id)).length){
             l[0] = user
             fullSync = true
-          }else if(launched && t){
+          }else if(launched && renderer.frameCount){
             addPlayers(user)
           }
         })
-        
+        console.log('launched', launched)
         if(launched){
           Players = Players.filter((v, i) => {
-            if(!users.filter(q=>q.id==v.playerData.id).length){
-              cams = cams.filter((cam, idx) => idx != i)
-            }
+            //if(!users.filter(q=>q.id==v.playerData.id).length){
+            //  cams = cams.filter((cam, idx) => idx != i)
+            //}
             return users.filter(q=>q.id==v.playerData.id).length
           })
-          iCamsc = Players.length
+          //iCamsc = Players.length
+          //console.log('Players', Players)
           Players.map((AI, idx) => {
-            if(AI.playerData.id == userID){
-              individualPlayerData['id'] = userID
+            if(+AI.playerData.id == +userID){
+              individualPlayerData['id'] = +userID
               individualPlayerData['name'] = AI.playerData.name
               individualPlayerData['time'] = AI.playerData.time
               //if(typeof score != 'undefined') {
@@ -3204,12 +3431,29 @@
               //  AI.playerData.score = score
               //  individualPlayerData['score'] = score
               //}
-              
               if(typeof cars == 'object' && cars.length) {
-                let car = cars[0]
+                let car = cars.filter(car=>+car.id==+userID)[0]
+                car.name = AI.playerData.name
                 let sendCar = {
-                  X: car.X,
-                  Z: car.Z,
+                  id: +userID,
+                  name: car.name,
+                  health: car.health,
+                  score: car.score,
+                  x: car.x,
+                  y: car.y,
+                  z: car.z,
+                  roll: car.roll,
+                  pitch: car.pitch,
+                  yaw: car.yaw,
+                  vx: car.vx,
+                  vy: car.vy,
+                  vz: car.vz,
+                  firing: !!car.firing,
+                  missiles: car.missiles,
+                  hasGun: !!car.hasGun,
+                  hasOverdrive: !!car.hasOverdrive,
+                  drift: !!car.drift,
+                  /*
                   //rl: car.rl,
                   //pt: car.pt,
                   yw: car.yw,
@@ -3218,26 +3462,26 @@
                   ywv: car.ywv,
                   vx: car.vx,
                   vz: car.vz,
-                  id: userID,
                   drift: car.drift,
-                  health: car.health,
                   curGun: car.curGun,
                   camMode: car.camMode,
                   shooting: car.shooting,
                   poweredUp: car.poweredUp,
                   playerName: car.playerName,
+                  */
                 }
                 individualPlayerData['car'] = sendCar
+                //console.log('adding sendCar property', individualPlayerData)
                 //console.log('sendCar: ', sendCar)
               }
 
-              if(typeof powerups == 'object' && powerups.length){
-                individualPlayerData['powerups'] = powerups
-              }
+              //if(typeof powerups == 'object' && powerups.length){
+              //  individualPlayerData['powerups'] = powerups
+              //}
 
-              if(typeof scores == 'object' && scores.length){
-                individualPlayerData['scores'] = scores
-              }
+              //if(typeof scores == 'object' && scores.length){
+              //  individualPlayerData['scores'] = scores
+              //}
 
               //if(typeof score1 != 'undefined') individualPlayerData['score1'] = score1
               //if(typeof score2 != 'undefined') individualPlayerData['score2'] = score2
@@ -3250,8 +3494,8 @@
               //if(typeof moves != 'undefined') individualPlayerData['moves'] = moves
               //if(typeof lastWinnerWasOp != 'undefined' && lastWinnerWasOp != -1) individualPlayerData['lastWinnerWasOp'] = lastWinnerWasOp
             }else{
-              if(AI.playerData?.id){
-                el = users.filter(v=>+v.id == +AI.playerData.id)[0]
+              if(+AI.playerData?.id){
+                var el = users.filter(v=>+v.id == +AI.playerData.id)[0]
                 Object.entries(AI).forEach(([key,val]) => {
                   switch(key){
                     // straight mapping of incoming data <-> players
@@ -3260,23 +3504,72 @@
                         let incomingCar = el[key]
                         if(cars.filter(v=>+v.id == +el[key].id).length){
                           let matchingCar = cars.filter(v=>+v.id == +el[key].id)[0]
-                          let id = el[key].id
+                          //let id = el[key].id
                           Object.entries(incomingCar).forEach(([key2, val2]) => {
-                            omit = false
-                            switch(key2){
-                              case 'Y': omit = true; break
-                              case 'vy': omit = true; break
-                              case 'pt': omit = true; break;
-                              case 'rl': omit = true; break
-                            }
+                            var omit = false
+                            //switch(key2){
+                            //  case 'Y': omit = true; break
+                            //  case 'vy': omit = true; break
+                            //  case 'pt': omit = true; break;
+                            //  case 'rl': omit = true; break
+                            //}
                             if(!omit) {
                               if(key2 == 'score'){
                                 if(+matchingCar[key2] < +val2) matchingCar[key2] = val2
                               }else{
                                 switch(key2){
+                                  case 'name':
+                                    matchingCar.name = val2
+                                  break
+                                  case 'x':
+                                    matchingCar.x = +val2
+                                  break
+                                  case 'y':
+                                    matchingCar.y = +val2
+                                  break
+                                  case 'z':
+                                    matchingCar.z = +val2
+                                  break
+                                  case 'firing':
+                                    matchingCar.firing = !!val2
+                                  break
+                                  case 'roll':
+                                    matchingCar.roll = +val2
+                                  break
+                                  case 'pitch':
+                                    matchingCar.pitch = +val2
+                                  break
+                                  case 'yaw':
+                                    matchingCar.yaw = +val2
+                                  break
+                                  case 'vx':
+                                    matchingCar.vx = +val2
+                                  break
+                                  case 'vy':
+                                    matchingCar.vy = +val2
+                                  break
+                                  case 'vz':
+                                    matchingCar.vz = +val2
+                                  break
                                   case 'health':
                                     matchingCar.health = +val2
                                   break
+                                  case 'score':
+                                    matchingCar.score = +val2
+                                  break
+                                  case 'missiles':
+                                    matchingCar.missiles = +val2
+                                  break
+                                  case 'hasGun':
+                                    matchingCar.hasGun = !!(+val2)
+                                  break
+                                  case 'hasOverdrive':
+                                    matchingCar.hasOverdrive = !!(+val2)
+                                  break
+                                  case 'drift':
+                                    matchingCar.drift= !!(+val2)
+                                  break
+                                  /*
                                   case 'X':
                                     matchingCar.lerpToX = val2
                                   break
@@ -3295,8 +3588,9 @@
                                   case 'vz':
                                     matchingCar.lerpToVz = val2
                                   break
+                                  */
                                   default:
-                                    if(+matchingCar.id != +userID) matchingCar[key2] = val2
+                                    //if(+matchingCar.id != +userID) matchingCar[key2] = val2
                                   break
                                 }
                               }
@@ -3305,6 +3599,7 @@
                         }
                       }
                     break;
+                    /*
                     case 'powerups':
                       if(typeof el[key] != 'undefined'){
                         el[key].map(powerup => {
@@ -3329,6 +3624,8 @@
                         })
                       }
                       break
+                      */
+
                     /*case 'P1':
                       if(typeof el[key] != 'undefined'){
                         P2 = el[key]
@@ -3358,19 +3655,17 @@
               }
             }
           })
-          for(i=0;i<Players.length;i++) if(Players[i]?.playerData?.id == userID) ofidx = i
         }
       }
 
-      recData              = []
-      opIsX = true
-      ofidx                = 0
-      users                = []
-      userID               = ''
-      gameConnected        = false
-      Players              = []
-      playerName           = ''
-      sync = () => {
+      var recData              = []
+      var users                = []
+      var userID               = ''
+      var gameID               = ''
+      var gameConnected        = false
+      var Players              = []
+      var playerName           = ''
+      const sync = () => {
         let sendData = {
           gameID,
           userID,
@@ -3403,7 +3698,7 @@
               regFrame.src = `reg.php?g=${gameSlug}&gmid=${gmid}` 
             }else{
               if(!gameConnected){
-                setInterval(()=>{sync()}, pollFreq = 500)  //ms
+                setInterval(()=>{ sync() }, 400)  //ms
                 gameConnected = true
               }
               if(!launched){
@@ -3417,14 +3712,14 @@
                   launchStatus.innerHTML      += `<br>`
                 })
                 launchStatus.innerHTML      += `<br>`.repeat(4)
-                launchButton = document.createElement('button')
+                var launchButton = document.createElement('button')
                 launchButton.innerHTML = 'launch!'
                 launchButton.className = 'buttons'
                 launchButton.onclick = () =>{ launch() }
                 launchStatus.appendChild(launchButton)
                 if(gameLink.innerHTML == ''){
                   launchModal.style.display = 'block'
-                  resultLink = document.createElement('div')
+                  var resultLink = document.createElement('div')
                   resultLink.className = 'resultLink'
                   if(pchoice){
                     resultLink.innerHTML = location.href.split(pchoice+userID).join('')
@@ -3432,7 +3727,7 @@
                     resultLink.innerHTML = location.href
                   }
                   gameLink.appendChild(resultLink)
-                  copyButton = document.createElement('button')
+                  var copyButton = document.createElement('button')
                   copyButton.title = "copy link to clipboard"
                   copyButton.className = 'copyButton'
                   copyButton.onclick = () => { copy() }
@@ -3446,7 +3741,7 @@
         })
       }
 
-      fullCopy = () => {
+      const fullCopy = () => {
         var launchButton = document.createElement('button')
         launchButton.innerHTML = 'launch!'
         launchButton.className = 'buttons'
@@ -3473,42 +3768,54 @@
       }
 
       const copy = () => {
-        var range = document.createRange()
-        range.selectNode(document.querySelectorAll('.resultLink')[0])
-        window.getSelection().removeAllRanges()
-        window.getSelection().addRange(range)
-        document.execCommand("copy")
-        window.getSelection().removeAllRanges()
-        let el = document.querySelector('#copyConfirmation')
-        el.style.display = 'block';
-        el.style.opacity = 1
-        reduceOpacity = () => {
-          if(+el.style.opacity > 0){
-            el.style.opacity -= .02 * (launched ? 4 : 1)
-            if(+el.style.opacity<.1){
-              el.style.opacity = 1
-              el.style.display = 'none'
-            }else{
-              setTimeout(()=>{
-                reduceOpacity()
-              }, 10)
+        document.querySelectorAll('.resultLink')[0].style.display = 'block'
+        setTimeout(()=>{
+          var range = document.createRange()
+          range.selectNode(document.querySelectorAll('.resultLink')[0])
+          launchModal.style.display = 'block'
+          window.getSelection().removeAllRanges()
+          window.getSelection().addRange(range)
+          document.execCommand("copy")
+          window.getSelection().removeAllRanges()
+          let el = document.querySelector('#copyConfirmation')
+          el.style.display = 'block';
+          el.style.opacity = 1
+          if(launched){
+            document.querySelectorAll('.resultLink')[0].style.display = 'none'
+            launchModal.style.display = 'none'
+          }
+
+          const reduceOpacity = () => {
+            if(+el.style.opacity > 0){
+              el.style.opacity -= .1 * (launched ? 4 : 1)
+              if(+el.style.opacity<.1){
+                el.style.opacity = 1
+                el.style.display = 'none'
+              }else{
+                setTimeout(()=>{
+                  reduceOpacity()
+                }, 10)
+              }
             }
           }
-        }
-        setTimeout(()=>{reduceOpacity()}, 250)
+          setTimeout(()=>{reduceOpacity()}, 250)
+        }, 0)
       }
       
       var userID = false
+      var turnID = false 
       var launched = false 
       var pchoice = false
+      var gameSlug = false
+      var gmid = false
       if(location.href.indexOf('gmid=') !== -1){
-        href = location.href
+        var href = location.href
         if(href.indexOf('?g=') !== -1) gameSlug = href.split('?g=')[1].split('&')[0]
         if(href.indexOf('&g=') !== -1) gameSlug = href.split('&g=')[1].split('&')[0]
-        if(href.indexOf('?gmid=') !== -1) gmid = href.split('?gmid=')[1].split('&')[0]
-        if(href.indexOf('&gmid=') !== -1) gmid = href.split('&gmid=')[1].split('&')[0]
-        if(href.indexOf('?p=') !== -1) userID = href.split(pchoice='?p=')[1].split('&')[0]
-        if(href.indexOf('&p=') !== -1) userID = href.split(pchoice='&p=')[1].split('&')[0]
+        if(href.indexOf('?gmid=') !== -1) gmid = +href.split('?gmid=')[1].split('&')[0]
+        if(href.indexOf('&gmid=') !== -1) gmid = +href.split('&gmid=')[1].split('&')[0]
+        if(href.indexOf('?p=') !== -1) userID = +href.split(pchoice='?p=')[1].split('&')[0]
+        if(href.indexOf('&p=') !== -1) userID = +href.split(pchoice='&p=')[1].split('&')[0]
         gameID = alphaToDec(gameSlug)
         if(gameID) sync(gameID)
 

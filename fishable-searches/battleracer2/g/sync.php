@@ -53,7 +53,7 @@
     */
     forEach($data->{'players'} as $key=>$player){
       // player drops if unseen for 10 seconds
-      if(isset($player->{'time'}) && ($time - $player->{'time'} > 10)){
+      if(isset($player->{'time'}) && ($time - $player->{'time'} > 20)){
         unset($data->{'players'}->{$key});
       }
     }

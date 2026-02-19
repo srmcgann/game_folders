@@ -1399,6 +1399,97 @@
             return car
           }
           
+          
+          
+        
+          powerupTemplate = [
+            {
+              name: 'speed++',
+              val: .5,
+              initVal: .5,
+              duration: 5
+            },
+            {
+              name: 'guns++',
+              val: 1,
+              initVal: 1,
+              duration: 20
+            },
+            {
+              name: 'health++',
+              val: 1,
+              initVal: 1,
+              duration: 0
+            }
+          ]
+          var cams = []
+          var grav = .66
+          var iCarsc = 1
+          var sparks = []
+          var iDrift = 50
+          var camDist = 7
+          var scores = []
+          var sliders = []
+          var flashes = []
+          var bullets = []
+          var iSparkv = .4
+          var iBulletv = 16
+          var maxSpeed = 500
+          var powerups = []
+          var carTrails = []
+          var showDash = true
+          var showCars = true
+          var camSelected = 0
+          var maxCamDist = 25
+          var lerpFactor = 20
+          var crashDamage = .2
+          var crosshairSel = 0
+          var showGyro = false
+          var smokeTrails = []
+          var showOrigin = true
+          var flashNotices = []
+          var bulletDamage = .05
+          var powerupFreq = 250
+          var showstars = true
+          var mapChoice= 'topo'
+          var showFloor = true
+          var camModeStyles = 2
+          var camFollowSpeed = 4
+          var maxTurnRadius = .1
+          var showCrosshair = true
+          var camSelHasChanged = false
+          var dashHasBeenHidden = false
+          var hotkeysModalVisible = false
+          var keyTimerInterval = 1/60*5 // .25 sec
+          var base_gun = Cylinder(1,8,.6,1.5).map(v=>{
+            v.map(q=>{
+              X = q[0]
+              Y = q[1]
+              Z = q[2]
+              R3(0,Math.PI/2,0)
+              q[0] = X
+              q[1] = Y
+              q[2] = Z
+            })
+            return v
+          })
+          var base_car_lowpoly = base_car = await loadOBJ('/games_shared_assets/best_car_no_wheels.obj', 1, 0,  -1, -2.75, 0, 0, Math.PI)
+          var base_wheel = await loadOBJ('/games_shared_assets/car_wheel.obj', 1, 0, 0, 0, 0, 0, Math.PI)
+          //base_car_lowpoly = await loadOBJ('best_car_no_wheels_lowpoly.obj', 1, 0, -1, -2, 0, 0, Math.PI)
+          base_wheel_lowpoly = await loadOBJ('/games_shared_assets/car_wheel_lowpoly.obj', 1, 0, 0, 0, 0, 0, Math.PI)
+          var base_car_decon = JSON.parse(JSON.stringify(base_car)).map(v=>{
+            v = [0, 0, 0,  // X,   Y,   Z
+                 0, 0, 0,  // vx,  vy,  vz
+                 0, 0, 0,  // rl,  pt,  yw
+                 0, 0, 0,  // rlv, ptv, ywv
+                 ] 
+            return v
+          })
+          
+          var PlayerCount                = 0
+          var Players                    = []
+            
+          
           async function masterInit(){
             powerupTemplate = [
               {
@@ -1489,7 +1580,7 @@
           }
           await masterInit()
           
-          PlayerInit = (idx, id) => { // called initially & when a player dies
+          const PlayerInit = (idx, id) => { // called initially & when a player dies
             Players[idx].car      = spawnCar(0, floor(0,0),0, id)
             Players[idx].car.drift = iDrift
             Players[idx].powerups = []
@@ -1501,19 +1592,19 @@
             }
           }
 
-          addPlayers = playerData => {
+          const addPlayers = playerData => {
             playerData.score = 0
             Players = [...Players, {playerData}]
             PlayerCount++
             PlayerInit(Players.length-1, playerData.id)
           }
 
-          spawnFlashNotice = (text, col='#8888')=>{
+          const spawnFlashNotice = (text, col='#8888')=>{
             flashNotices = [...flashNotices, [text, col, 1]]
             while(flashNotices.length>3) flashNotices.shift()
           }
 
-          spawnCam = car => {
+          const spawnCam = car => {
             
             X = car.X
             Z = car.Z - camDist
